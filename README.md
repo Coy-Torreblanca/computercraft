@@ -1,0 +1,1 @@
+Use this to clone repos to turtles - https://github.com/SquidDev-CC/random-programs/tree/master/lua-git
