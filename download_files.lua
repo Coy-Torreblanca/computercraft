@@ -77,7 +77,7 @@ end
 fs.delete(ROOT_PATH)
 ensureDir(ROOT_PATH)
 downloadFolder(ROOT_URL, ROOT_PATH)
-fs.copy(ROOT_PATH .. 'download_files.lua', '/download_files.lua')
+fs.copy(ROOT_PATH .. '/download_files.lua', '/download_files.lua')
 print("All files downloaded recursively!")
 
 local M = {}
