@@ -74,12 +74,14 @@ local function downloadFolder(url, localPath)
 end
 
 -- Start downloading from root
+-- Create repo directory.
 fs.delete(ROOT_PATH)
 ensureDir(ROOT_PATH)
+
+-- Download repo contents.
 downloadFolder(ROOT_URL, ROOT_PATH)
+
+-- Put download files script to allow for constant exports.
+fs.delete(ROOT_PATH .. '/download_files.lua', '/download_files.lua')
 fs.copy(ROOT_PATH .. '/download_files.lua', '/download_files.lua')
 print("All files downloaded recursively!")
-
-local M = {}
-M.ROOT_PATH = ROOT_PATH
-return M
