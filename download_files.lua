@@ -60,7 +60,7 @@ local function downloadFolder(url, localPath)
     for name in html:gmatch('<a href="([^"]+)">') do
         if name ~= "../" and name:sub(1, 1) ~= '.' then
             local fullUrl = url .. name
-            local localFilePath = localPath .. name
+            local localFilePath = localPath .. "/" .. name
 
             if name:sub(-1) == "/" then
                 -- It's a directory: recurse
