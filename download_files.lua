@@ -2,7 +2,7 @@
 local HOST_IP = "localhost"   -- your host LAN IP
 local PORT = 8000                 -- port your Python server is running on
 local ROOT_URL = ("http://%s:%d/"):format(HOST_IP, PORT)
-local ROOT_PATH = "/"             -- local path to save files
+local ROOT_PATH = "/repo"             -- local path to save files
 
 -- Utility: ensure directory exists
 local function ensureDir(path)
@@ -74,6 +74,8 @@ local function downloadFolder(url, localPath)
 end
 
 -- Start downloading from root
+fs.delete(ROOT_PATH)
+ensureDir(ROOT_PATH)
 downloadFolder(ROOT_URL, ROOT_PATH)
 print("All files downloaded recursively!")
 
