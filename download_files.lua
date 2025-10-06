@@ -76,10 +76,10 @@ end
 -- Start downloading from root
 fs.delete(ROOT_PATH)
 ensureDir(ROOT_PATH)
-downloadFile(ROOT_URL .. 'download_files.lua')
 downloadFolder(ROOT_URL, ROOT_PATH)
+fs.copy(ROOT_PATH .. 'download_files.lua', '/download_files.lua')
 print("All files downloaded recursively!")
 
-M = {}
+local M = {}
 M.ROOT_PATH = ROOT_PATH
 return M
