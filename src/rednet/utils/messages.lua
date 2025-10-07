@@ -66,3 +66,5 @@ function M.receive_ack(protocol, timeout)
         end
     end
 end
+
+return M
