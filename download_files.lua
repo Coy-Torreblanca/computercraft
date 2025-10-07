@@ -2,7 +2,7 @@
 local HOST_IP = "localhost"   -- your host LAN IP
 local PORT = 8000                 -- port your Python server is running on
 local ROOT_URL = ("http://%s:%d/"):format(HOST_IP, PORT)
-local ROOT_PATH = "/"             -- local path to save files
+local ROOT_PATH = "/repo"             -- local path to save files
 
 -- Utility: ensure directory exists
 local function ensureDir(path)
@@ -60,7 +60,7 @@ local function downloadFolder(url, localPath)
     for name in html:gmatch('<a href="([^"]+)">') do
         if name ~= "../" and name:sub(1, 1) ~= '.' then
             local fullUrl = url .. name
-            local localFilePath = localPath .. name
+            local localFilePath = localPath .. "/" .. name
 
             if name:sub(-1) == "/" then
                 -- It's a directory: recurse
@@ -74,6 +74,14 @@ local function downloadFolder(url, localPath)
 end
 
 -- Start downloading from root
-downloadFolder(ROOT_URL, ROOT_PATH)
-print("All files downloaded recursively!")
+-- Create repo directory.
+fs.delete(ROOT_PATH)
+ensureDir(ROOT_PATH)
 
+-- Download repo contents.
+downloadFolder(ROOT_URL, ROOT_PATH)
+
+-- Put download files script to allow for constant exports.
+fs.delete('/download_files.lua')
+fs.copy(ROOT_PATH .. '/download_files.lua', '/download_files.lua')
+print("All files downloaded recursively!")
