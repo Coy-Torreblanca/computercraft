@@ -119,4 +119,4 @@ end
 
 -- Uncomment one of these to run a test directly:
 -- test_send_ack()
--- test_receive_ack()
+test_receive_ack()
