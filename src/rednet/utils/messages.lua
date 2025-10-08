@@ -14,7 +14,13 @@ function M.send_ack(message, protocol, computer_id, timeout)
     while true do
         retry_count = retry_count + 1
         print("[SEND_ACK] Attempt #" .. retry_count .. " - Sending message to computer " .. computer_id)
-        rednet.send(computer_id, message, protocol)
+        
+        local send_success = rednet.send(computer_id, message, protocol)
+
+        if not send_success then
+            print("[SEND_ACK] ERROR - Failed to send message to computer " .. computer_id)
+            error("Failed to send message to computer " .. computer_id)
+        end
         
         local remaining_time = (start_time + timeout_ms - os.epoch("utc")) / 1000
 
@@ -26,17 +32,23 @@ function M.send_ack(message, protocol, computer_id, timeout)
         end
         
         print("[SEND_ACK] Waiting for synack (timeout: " .. string.format("%.1f", timeout_time) .. "s, remaining: " .. string.format("%.1f", remaining_time) .. "s)")
-        local  id, ack, _ = rednet.receive(protocol, timeout_time)
+        local  sender_id, ack, _ = rednet.receive(protocol, timeout_time)
         
         if ack then
-            print("[SEND_ACK] Received: '" .. ack .. "' from computer " .. id)
+            print("[SEND_ACK] Received: '" .. ack .. "' from computer " .. sender_id)
         end
         
-        if id == computer_id and ack == message .. 'synack' then
+        if sender_id == computer_id and ack == message .. 'synack' then
             print("[SEND_ACK] Valid synack received! Sending final ack...")
-            rednet.send(computer_id, message .. 'ack', protocol)
+            local send_success = rednet.send(computer_id, message .. 'ack', protocol)
+            
+            if not send_success then
+                print("[SEND_ACK] ERROR - Failed to send final ack to computer " .. computer_id)
+                error("Failed to send final ack to computer " .. computer_id)
+            end
+            
             print("[SEND_ACK] SUCCESS - Handshake complete after " .. retry_count .. " attempts")
-            return ack, id
+            return ack, sender_id
         elseif ack then
             print("[SEND_ACK] Invalid acknowledgment - Expected: '" .. message .. "synack', Got: '" .. ack .. "'")
         end
@@ -67,13 +79,13 @@ function M.receive_ack(protocol, timeout)
             print("[RECEIVE_ACK] Attempt #" .. wait_count .. " - Waiting for message (remaining: " .. string.format("%.1f", remaining_time) .. "s)")
         end
         
-        local id, message, _ = rednet.receive(protocol, math.min(remaining_time, 1)) -- Check at most every second
+        local sender_id, message, _ = rednet.receive(protocol, math.min(remaining_time, 1)) -- Check at most every second
         
         if message then
-            print("[RECEIVE_ACK] Received message: '" .. message .. "' from computer " .. id)
+            print("[RECEIVE_ACK] Received message: '" .. message .. "' from computer " .. sender_id)
         end
         
-        if message and id == computer_id then
+        if message then
             print("[RECEIVE_ACK] Valid message received! Starting synack handshake...")
             
             -- Wait for final ack from sender, retrying synack send
@@ -84,8 +96,13 @@ function M.receive_ack(protocol, timeout)
             while true do
                 synack_count = synack_count + 1
                 -- Send acknowledgment back to sender
-                print("[RECEIVE_ACK] Attempt #" .. synack_count .. " - Sending synack to computer " .. id)
-                rednet.send(id, message .. 'synack', protocol)
+                print("[RECEIVE_ACK] Attempt #" .. synack_count .. " - Sending synack to computer " .. sender_id)
+                local send_success = rednet.send(sender_id, message .. 'synack', protocol)
+                
+                if not send_success then
+                    print("[RECEIVE_ACK] ERROR - Failed to send synack to computer " .. sender_id)
+                    error("Failed to send synack to computer " .. sender_id)
+                end
                 
                 local ack_remaining_time = (ack_start_time + ack_timeout_ms - os.epoch("utc")) / 1000
                 
@@ -103,15 +120,15 @@ function M.receive_ack(protocol, timeout)
                     print("[RECEIVE_ACK] Received: '" .. ack .. "' from computer " .. ack_id)
                 end
                 
-                if ack and ack_id == computer_id and ack == message .. 'ack' then
+                if ack and ack_id == sender_id and ack == message .. 'ack' then
                     print("[RECEIVE_ACK] SUCCESS - Handshake complete! Returning message.")
-                    return message, id
+                    return message, sender_id
                 elseif ack then
-                    print("[RECEIVE_ACK] Invalid ack - Expected: '" .. message .. "ack', Got: '" .. ack .. "'")
+                    print("[RECEIVE_ACK] Invalid ack - Expected: '" .. message .. "ack' from computer " .. sender_id .. ", Got: '" .. ack .. "' from computer " .. ack_id)
                 end
             end
         elseif message then
-            print("[RECEIVE_ACK] Wrong target - Message was for computer " .. id .. ", we are " .. computer_id)
+            print("[RECEIVE_ACK] Ignoring message from ourselves (computer " .. computer_id .. ")")
         end
     end
 end
