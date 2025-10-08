@@ -24,7 +24,7 @@ function test_receive_ack()
     local timeout = 3000  -- 3000 second timeout (gives you time to start sender)
 
     rednet.open('left')
-    rednet.host(protocol, 'host')
+    rednet.host(protocol, 'reciever')
     
     print("Starting receiver test...")
     print("Waiting for message on protocol '" .. protocol .. "'...")
