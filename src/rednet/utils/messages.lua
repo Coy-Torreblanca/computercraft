@@ -26,7 +26,7 @@ function M.send_ack(message, protocol, computer_id, timeout)
         end
         
         print("[SEND_ACK] Waiting for synack (timeout: " .. string.format("%.1f", timeout_time) .. "s, remaining: " .. string.format("%.1f", remaining_time) .. "s)")
-        local ack, id = rednet.receive(protocol, timeout_time)
+        local  id, ack, _ = rednet.receive(protocol, timeout_time)
         
         if ack then
             print("[SEND_ACK] Received: '" .. ack .. "' from computer " .. id)
@@ -67,7 +67,7 @@ function M.receive_ack(protocol, timeout)
             print("[RECEIVE_ACK] Attempt #" .. wait_count .. " - Waiting for message (remaining: " .. string.format("%.1f", remaining_time) .. "s)")
         end
         
-        local message, id = rednet.receive(protocol, math.min(remaining_time, 1)) -- Check at most every second
+        local id, message, _ = rednet.receive(protocol, math.min(remaining_time, 1)) -- Check at most every second
         
         if message then
             print("[RECEIVE_ACK] Received message: '" .. message .. "' from computer " .. id)
@@ -97,7 +97,7 @@ function M.receive_ack(protocol, timeout)
                 end
                 
                 print("[RECEIVE_ACK] Waiting for final ack (timeout: " .. string.format("%.1f", ack_timeout_time) .. "s)")
-                local ack, ack_id = rednet.receive(protocol, ack_timeout_time)
+                local ack_id, ack, _ = rednet.receive(protocol, ack_timeout_time)
                 
                 if ack then
                     print("[RECEIVE_ACK] Received: '" .. ack .. "' from computer " .. ack_id)
