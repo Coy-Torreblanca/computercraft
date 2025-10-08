@@ -1,3 +1,45 @@
+messages = require('/repo/src/rednet/utils/messages')
+
+function test_send_ack()
+    -- IMPORTANT: Update computer_id to match your receiver's ID
+    -- Check receiver ID by running: print(os.computerID())
+    local message = 'test'
+    local protocol = 'test'
+    local computer_id = 1  -- *** CHANGE THIS to your receiver's computer ID ***
+    local timeout = 1000  -- 1000 second timeout
+
+    rednet.open('left')
+    rednet.host(protocol, 'host')
+    
+    print("Starting sender test...")
+    print("Sending message to computer " .. computer_id)
+    
+    local ack, id = messages.send_ack(message, protocol, computer_id, timeout)
+    
+    print("SUCCESS! Received acknowledgment: " .. ack .. " from computer " .. id)
+end
+
+function test_receive_ack()
+    local protocol = 'test'
+    local timeout = 3000  -- 3000 second timeout (gives you time to start sender)
+
+    rednet.open('left')
+    rednet.host(protocol, 'host')
+    
+    print("Starting receiver test...")
+    print("Waiting for message on protocol '" .. protocol .. "'...")
+    print("This computer ID: " .. os.computerID())
+    print("You have " .. timeout .. " seconds to start the sender.")
+    
+    local message, sender_id = messages.receive_ack(protocol, timeout)
+    
+    print("SUCCESS! Received message: '" .. message .. "' from computer " .. sender_id)
+end
+
+-- Uncomment one of these to run a test directly:
+-- test_send_ack()
+test_receive_ack()
+
 --[[
     Test Suite for rednet/utils/messages.lua
     
@@ -14,12 +56,7 @@
     SETUP INSTRUCTIONS:
     ==================
     
-    Step 1: Open modems and host protocol on BOTH computers
-    -------------------------------------------------------
-    Run this on BOTH computers before testing:
-    
-        peripheral.find("modem", rednet.open)  -- Opens all attached modems
-        rednet.host("test", "test_protocol")    -- Host the test protocol
+    Step 1: Attach modems to the left on both computers.
     
     Step 2: Check Computer IDs
     --------------------------
@@ -84,39 +121,3 @@
     
     Both sender and receiver will retry their messages periodically if not acknowledged.
 ]]--
-
-messages = require('/repo/src/rednet/utils/messages')
-
-function test_send_ack()
-    -- IMPORTANT: Update computer_id to match your receiver's ID
-    -- Check receiver ID by running: print(os.computerID())
-    local message = 'test'
-    local protocol = 'test'
-    local computer_id = 2  -- *** CHANGE THIS to your receiver's computer ID ***
-    local timeout = 10  -- 10 second timeout
-    
-    print("Starting sender test...")
-    print("Sending message to computer " .. computer_id)
-    
-    local ack, id = messages.send_ack(message, protocol, computer_id, timeout)
-    
-    print("SUCCESS! Received acknowledgment: " .. ack .. " from computer " .. id)
-end
-
-function test_receive_ack()
-    local protocol = 'test'
-    local timeout = 30  -- 30 second timeout (gives you time to start sender)
-    
-    print("Starting receiver test...")
-    print("Waiting for message on protocol '" .. protocol .. "'...")
-    print("This computer ID: " .. os.computerID())
-    print("You have " .. timeout .. " seconds to start the sender.")
-    
-    local message, sender_id = messages.receive_ack(protocol, timeout)
-    
-    print("SUCCESS! Received message: '" .. message .. "' from computer " .. sender_id)
-end
-
--- Uncomment one of these to run a test directly:
--- test_send_ack()
-test_receive_ack()
