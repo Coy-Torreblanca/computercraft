@@ -27,9 +27,19 @@ function M.register_host(swarm_count, protocol)
     rednet.open('left')
     rednet.host(protocol, 'host')
     rednet.host(protocol .. '_host_ack', 'host')
-    local swarm_inv 
+    
+    local swarm_inv
+    local start_time = os.epoch("utc")
+    local lookup_timeout_ms = 300000 -- 5 minutes to find all drones
 
     while true do
+        local elapsed_time = (os.epoch("utc") - start_time) / 1000
+        
+        if elapsed_time >= lookup_timeout_ms / 1000 then
+            print("[REGISTER_HOST] ERROR - Lookup timeout after " .. string.format("%.1f", elapsed_time) .. "s")
+            error("Failed to find " .. swarm_count .. " nodes within timeout period")
+        end
+        
         print("[REGISTER_HOST] Looking up swarm inventory...")
         swarm_inv = {rednet.lookup(protocol)}
         if swarm_inv and #swarm_inv == swarm_count then
@@ -37,7 +47,7 @@ function M.register_host(swarm_count, protocol)
             break
         end
         if #swarm_inv > 0 then
-            print("[REGISTER_HOST] Found " .. #swarm_inv .. " nodes in swarm")
+            print("[REGISTER_HOST] Found " .. #swarm_inv .. " nodes, need " .. swarm_count)
         end
         print("[REGISTER_HOST] Still looking for nodes... (elapsed: " .. string.format("%.1f", elapsed_time) .. "s)")
         sleep(1)
@@ -45,7 +55,7 @@ function M.register_host(swarm_count, protocol)
 
     local swarm_validation = {}
     
-    local start_time = os.epoch("utc")
+    start_time = os.epoch("utc") -- Reset timer for registration phase
     local total_timeout_ms = 600000 -- 10 minutes total timeout for all registrations
     local attempt_count = 0
 

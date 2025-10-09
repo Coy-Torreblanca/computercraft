@@ -4,7 +4,7 @@
 local initiate_swarm = require('/repo/src/rednet/swarm/initiate_swarm')
 
 -- Configuration
-local SWARM_COUNT = 2  -- Number of drones (change based on your test setup)
+local SWARM_COUNT = 3  -- Number of drones (change based on your test setup)
 local PROTOCOL = 'test_swarm'
 
 print("===========================================")
