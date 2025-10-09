@@ -85,7 +85,7 @@ function M.register_drone(protocol)
     
     -- Announce this drone is available
     rednet.host(protocol, 'drone-' .. id)
-    rednet.host(protocol .. '_host_ack', 'drone')
+    rednet.host(protocol .. '_host_ack', 'drone-' .. id)
     
     local start_time = os.epoch("utc")
     local lookup_timeout_ms = 300000 -- 5 minutes to find host
