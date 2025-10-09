@@ -3,7 +3,7 @@ local M = {}
 inv = require('/repo/src/turtle/inv')
 messages = require('/repo/src/rednet/utils/messages')
 
-function _validate_swarm(swarm_validation_table)
+function _validate_swarm(swarm_inv, swarm_validation_table)
 
     for _, computer_id in pairs(swarm_inv) do
         if not swarm_validation_table[computer_id] then
@@ -76,7 +76,7 @@ function M.register_host(swarm_count, protocol)
             print("[REGISTER_HOST] Registered computer " .. sender_id .. " - Total registered: " .. tostring(#swarm_validation) .. "/" .. swarm_count)
         end
 
-        if _validate_swarm(swarm_validation) then
+        if _validate_swarm(swarm_inv, swarm_validation) then
             print("[REGISTER_HOST] SUCCESS - All " .. swarm_count .. " nodes registered!")
             break
         end
