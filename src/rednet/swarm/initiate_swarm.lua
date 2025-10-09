@@ -30,10 +30,16 @@ function M.register_host(swarm_count, protocol)
     local swarm_inv 
 
     while true do
+        print("[REGISTER_HOST] Looking up swarm inventory...")
         swarm_inv = {rednet.lookup(protocol)}
         if swarm_inv and #swarm_inv == swarm_count then
+            print("[REGISTER_HOST] Found " .. #swarm_inv .. " nodes in swarm")
             break
         end
+        if #swarm_inv > 0 then
+            print("[REGISTER_HOST] Found " .. #swarm_inv .. " nodes in swarm")
+        end
+        print("[REGISTER_HOST] Still looking for nodes... (elapsed: " .. string.format("%.1f", elapsed_time) .. "s)")
         sleep(1)
     end
 
