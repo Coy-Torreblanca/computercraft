@@ -26,7 +26,7 @@ function M.register_host(swarm_count, protocol)
     inv.ensureAttached('computercraft:wireless_modem_normal', 'left')
     rednet.open('left')
     rednet.host(protocol, 'host')
-    rednet.host(protocol .. '_host_ack')
+    rednet.host(protocol .. '_host_ack', 'host')
     local swarm_inv 
 
     while true do
@@ -85,6 +85,7 @@ function M.register_drone(protocol)
     
     -- Announce this drone is available
     rednet.host(protocol, 'drone-' .. id)
+    rednet.host(protocol .. '_host_ack', 'drone')
     
     local start_time = os.epoch("utc")
     local lookup_timeout_ms = 300000 -- 5 minutes to find host
