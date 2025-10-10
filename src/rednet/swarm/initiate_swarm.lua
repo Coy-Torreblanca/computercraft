@@ -23,7 +23,7 @@ function M.register_host(swarm_count, protocol)
     --- protocol - String of protocol under which swarm will communicate.
     
 
-    inv.ensureAttached('computercraft:wireless_modem_normal', 'left')
+    inv.ensureAttached('computercraft:wireless_modem_advanced', 'left')
     rednet.open('left')
     rednet.host(protocol, 'host')
     rednet.host(protocol .. '_host_ack', 'host')
@@ -97,7 +97,7 @@ function M.register_drone(protocol)
     
     print("[REGISTER_DRONE] Starting registration for protocol: " .. protocol)
     
-    inv.ensureAttached('computercraft:wireless_modem_normal', 'left')
+    inv.ensureAttached('computercraft:wireless_modem_advanced', 'left')
     rednet.open('left')
 
     id = os.computerID()
