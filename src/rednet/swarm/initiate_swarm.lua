@@ -27,6 +27,8 @@ function M.register_host(swarm_count, protocol)
     rednet.open('left')
     rednet.host(protocol, 'host')
     rednet.host(protocol .. '_host_ack', 'host')
+
+    local id = os.computerID()
     
     local swarm_inv
     local start_time = os.epoch("utc")
@@ -54,6 +56,7 @@ function M.register_host(swarm_count, protocol)
     end
 
     local swarm_validation = {}
+    swarm_validation[id] = true
     
     start_time = os.epoch("utc") -- Reset timer for registration phase
     local total_timeout_ms = 600000 -- 10 minutes total timeout for all registrations
