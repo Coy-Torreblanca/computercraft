@@ -1,7 +1,7 @@
 local M = {}
 
 function M.find_item(item_name)
-    -- check current item slot return slot numger with item or nil.
+    -- check current item slot return slot number with item or nil.
 
     -- Check if current slot has target item.
     local item = turtle.getItemDetail()
@@ -10,7 +10,7 @@ function M.find_item(item_name)
         return turtle.getSelectedSlot()
     end
 
-    -- Check all flots for target item.
+    -- Check all slots for target item.
     for i = 1, 16 do
 
         item = turtle.getItemDetail(i)
@@ -19,6 +19,23 @@ function M.find_item(item_name)
             return i
         end
     end
+end
+
+function M.find_space_for_item(item_name)
+
+    -- First check to see if you can find stack of item with enough space.
+
+    for i = 1, 16 do
+        local item = turtle.getItemDetail(i)
+        if (item and item.name == item_name) then
+            if turtle.getItemSpace(i) ~= 0 then
+                return i
+            end
+        end
+    end
+
+    -- If no stack with enough space, find an empty slot.
+    return M.find_empty_slot()
 end
 
 function M.find_empty_slot()
