@@ -240,6 +240,164 @@ test("coordinate and cardinal directions are consistent", function()
     assert_equals("north", turtle_nav.find_facing(), "away_z should map to north")
 end)
 
+-- Test 16: Goto Location - Already at Target
+test("goto_location when already at target location", function()
+    turtle_nav.reset_state()
+    local current = turtle_nav.get_current_location()
+    
+    local success, final_loc = turtle_nav.goto_location(current.x, current.y, current.z)
+    assert_true(success, "Should succeed when already at target")
+    assert_equals(current.x, final_loc.x, "X coordinate should match")
+    assert_equals(current.y, final_loc.y, "Y coordinate should match")
+    assert_equals(current.z, final_loc.z, "Z coordinate should match")
+    print("    Already at target: (" .. final_loc.x .. "," .. final_loc.y .. "," .. final_loc.z .. ")")
+end)
+
+-- Test 17: Goto Location - Single Axis X
+test("goto_location moves along X axis only", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local target_x = start.x + 2  -- Move 2 blocks in X
+    
+    local success, final_loc = turtle_nav.goto_location(target_x, start.y, start.z)
+    
+    if success then
+        assert_equals(target_x, final_loc.x, "Should reach target X coordinate")
+        assert_equals(start.y, final_loc.y, "Y should not change")
+        assert_equals(start.z, final_loc.z, "Z should not change")
+        print("    Moved from X=" .. start.x .. " to X=" .. final_loc.x)
+        
+        -- Return to start
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    else
+        print("    [SKIP] Path blocked, could not complete test")
+    end
+end)
+
+-- Test 18: Goto Location - Single Axis Y
+test("goto_location moves along Y axis only", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local target_y = start.y + 2  -- Move 2 blocks up
+    
+    local success, final_loc = turtle_nav.goto_location(start.x, target_y, start.z)
+    
+    if success then
+        assert_equals(start.x, final_loc.x, "X should not change")
+        assert_equals(target_y, final_loc.y, "Should reach target Y coordinate")
+        assert_equals(start.z, final_loc.z, "Z should not change")
+        print("    Moved from Y=" .. start.y .. " to Y=" .. final_loc.y)
+        
+        -- Return to start
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    else
+        print("    [SKIP] Path blocked, could not complete test")
+    end
+end)
+
+-- Test 19: Goto Location - Single Axis Z
+test("goto_location moves along Z axis only", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local target_z = start.z + 2  -- Move 2 blocks in Z
+    
+    local success, final_loc = turtle_nav.goto_location(start.x, start.y, target_z)
+    
+    if success then
+        assert_equals(start.x, final_loc.x, "X should not change")
+        assert_equals(start.y, final_loc.y, "Y should not change")
+        assert_equals(target_z, final_loc.z, "Should reach target Z coordinate")
+        print("    Moved from Z=" .. start.z .. " to Z=" .. final_loc.z)
+        
+        -- Return to start
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    else
+        print("    [SKIP] Path blocked, could not complete test")
+    end
+end)
+
+-- Test 20: Goto Location - Multiple Axes
+test("goto_location moves along multiple axes", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local target = {
+        x = start.x + 2,
+        y = start.y + 1,
+        z = start.z + 2
+    }
+    
+    local success, final_loc = turtle_nav.goto_location(target.x, target.y, target.z)
+    
+    if success then
+        assert_equals(target.x, final_loc.x, "Should reach target X coordinate")
+        assert_equals(target.y, final_loc.y, "Should reach target Y coordinate")
+        assert_equals(target.z, final_loc.z, "Should reach target Z coordinate")
+        print("    Moved from (" .. start.x .. "," .. start.y .. "," .. start.z .. ")")
+        print("           to (" .. final_loc.x .. "," .. final_loc.y .. "," .. final_loc.z .. ")")
+        
+        -- Return to start
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    else
+        print("    [SKIP] Path blocked, could not complete test")
+    end
+end)
+
+-- Test 21: Goto Location - Round Trip
+test("goto_location can return to original position", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local waypoint = {
+        x = start.x + 3,
+        y = start.y + 2,
+        z = start.z - 2
+    }
+    
+    -- Go to waypoint
+    local success1, loc1 = turtle_nav.goto_location(waypoint.x, waypoint.y, waypoint.z)
+    
+    if not success1 then
+        print("    [SKIP] Could not reach waypoint")
+        return
+    end
+    
+    assert_equals(waypoint.x, loc1.x, "Should reach waypoint X")
+    assert_equals(waypoint.y, loc1.y, "Should reach waypoint Y")
+    assert_equals(waypoint.z, loc1.z, "Should reach waypoint Z")
+    
+    -- Return to start
+    local success2, loc2 = turtle_nav.goto_location(start.x, start.y, start.z)
+    assert_true(success2, "Should successfully return to start")
+    assert_equals(start.x, loc2.x, "Should return to start X")
+    assert_equals(start.y, loc2.y, "Should return to start Y")
+    assert_equals(start.z, loc2.z, "Should return to start Z")
+    print("    Successfully completed round trip")
+end)
+
+-- Test 22: Goto Location - Negative Directions
+test("goto_location handles negative direction movement", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local target = {
+        x = start.x - 2,  -- Move negative X
+        y = start.y - 1,  -- Move negative Y (down)
+        z = start.z - 2   -- Move negative Z
+    }
+    
+    local success, final_loc = turtle_nav.goto_location(target.x, target.y, target.z)
+    
+    if success then
+        assert_equals(target.x, final_loc.x, "Should reach target X (negative)")
+        assert_equals(target.y, final_loc.y, "Should reach target Y (down)")
+        assert_equals(target.z, final_loc.z, "Should reach target Z (negative)")
+        print("    Moved in negative directions to (" .. final_loc.x .. "," .. final_loc.y .. "," .. final_loc.z .. ")")
+        
+        -- Return to start
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    else
+        print("    [SKIP] Path blocked, could not complete test")
+    end
+end)
+
 -- Print Summary
 print("\n")
 print("===========================================")

@@ -416,4 +416,103 @@ function M.move_direction(direction)
 
 end
 
+function M.goto_location(x, y, z)
+    -- Navigate turtle to target location using simple axis-by-axis pathfinding.
+    --
+    -- Algorithm: Try to move along each axis (x, y, z) in sequence. If blocked on one
+    -- axis, try another. If blocked on all axes that still need movement, fail.
+    --
+    -- Args:
+    --     x: Target X coordinate
+    --     y: Target Y coordinate  
+    --     z: Target Z coordinate
+    --
+    -- Returns:
+    --     success: Boolean, true if reached target location
+    --     location: Current location table {x, y, z}
+    M.get_current_location()
+    local target = {x = x, y = y, z = z}
+    
+    local function get_delta()
+        -- Calculate remaining distance on each axis
+        return {
+            x = target.x - M.current_location.x,
+            y = target.y - M.current_location.y,
+            z = target.z - M.current_location.z
+        }
+    end
+    
+    local function try_move_axis(axis)
+        -- Attempt to move one block along the specified axis toward target
+        local delta = get_delta()
+        
+        if axis == "x" then
+            if delta.x > 0 then
+                return M.move_direction("towards_x")
+            elseif delta.x < 0 then
+                return M.move_direction("away_x")
+            end
+        elseif axis == "z" then
+            if delta.z > 0 then
+                return M.move_direction("towards_z")
+            elseif delta.z < 0 then
+                return M.move_direction("away_z")
+            end
+        elseif axis == "y" then
+            if delta.y > 0 then
+                return M.move_up()
+            elseif delta.y < 0 then
+                return M.move_down()
+            end
+        end
+        
+        -- No movement needed on this axis
+        return false, nil
+    end
+    
+    -- Navigate to target
+    local max_iterations = 10000  -- Safety limit to prevent infinite loops
+    local iterations = 0
+    
+    local axes = {"x", "y", "z"}
+    while iterations < max_iterations do
+        iterations = iterations + 1
+        local delta = get_delta()
+        
+        -- Check if we've reached target
+        if delta.x == 0 and delta.y == 0 and delta.z == 0 then
+            return true, M.current_location
+        end
+        
+        -- Try each axis that still needs movement
+        local moved = false
+        
+        for _, axis in ipairs(axes) do
+            local current_delta = get_delta()
+            local needs_movement = (axis == "x" and current_delta.x ~= 0) or 
+                                  (axis == "y" and current_delta.y ~= 0) or
+                                  (axis == "z" and current_delta.z ~= 0)
+            
+            if needs_movement then
+                local success, location = try_move_axis(axis)
+                if success then
+                    moved = true
+                    break  -- Successfully moved, start next iteration
+                end
+            end
+        end
+        
+        -- If we couldn't move on any axis, we're blocked
+        if not moved then
+            print("[GOTO_LOCATION] Blocked on all axes. Current: (" .. 
+                  M.current_location.x .. "," .. M.current_location.y .. "," .. M.current_location.z .. 
+                  ") Target: (" .. target.x .. "," .. target.y .. "," .. target.z .. ")")
+            return false, M.current_location
+        end
+    end
+    
+    -- Hit iteration limit (should never happen in normal operation)
+    error("[GOTO_LOCATION] Exceeded maximum iterations. Possible infinite loop.")
+end
+
 return M

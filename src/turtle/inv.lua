@@ -140,9 +140,14 @@ local_valid_fuel_items = {
     'minecraft:charcoal_block',
 }
 
-function M.refuel()
+function M.refuel(force)
     -- Refuel the turtle.
     -- Returns: Boolean depending on success.
+
+    if not force and turtle.getFuelLevel() > 0 then
+        return true
+    end
+
     local current_slot = turtle.getSelectedSlot()
     for _, item in ipairs(local_valid_fuel_items) do
         local slot = M.find_item(item)
