@@ -95,7 +95,7 @@ function M.get_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = peripheral.getNameLocal
+    local turtle_name = 'turtle'
     
     local items_retrieved = 0
     
