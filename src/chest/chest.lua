@@ -95,7 +95,7 @@ function M.get_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = 'turtle'
+    local turtle_name = 'turtle_0'
     
     local items_retrieved = 0
     
@@ -183,7 +183,7 @@ function M.deposit_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = "turtle"
+    local turtle_name = "turtle_0"
     
     local items_deposited = 0
     
@@ -249,7 +249,7 @@ function M.deposit_all(direction)
         return 0
     end
     
-    local turtle_name = "turtle"
+    local turtle_name = "turtle_0"
     local slots_deposited = 0
     
     for slot = 1, 16 do
