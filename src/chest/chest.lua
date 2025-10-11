@@ -56,6 +56,14 @@ local function get_chest_peripheral(direction)
     return chest, nil
 end
 
+local function get_turtle_name()
+    local modem = peripheral.find("modem")
+    if not modem then
+        return nil, "No modem found"
+    end
+    return modem.getNameLocal()
+end
+
 function M.get_item(item_name, count, direction)
     -- Get a specific item from a chest into turtle's inventory using peripheral API.
     --
@@ -95,7 +103,7 @@ function M.get_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = 'turtle_0'
+    local turtle_name = get_turtle_name()
     
     local items_retrieved = 0
     
@@ -183,7 +191,7 @@ function M.deposit_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = "turtle_0"
+    local turtle_name = get_turtle_name()
     
     local items_deposited = 0
     
@@ -249,7 +257,7 @@ function M.deposit_all(direction)
         return 0
     end
     
-    local turtle_name = "turtle_0"
+    local turtle_name = get_turtle_name()
     local slots_deposited = 0
     
     for slot = 1, 16 do
