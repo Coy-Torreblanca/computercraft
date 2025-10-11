@@ -7,7 +7,7 @@ Interact with chests using CC: Tweaked's peripheral inventory API.
 ```lua
 local chest = require('/repo/src/chest/chest')
 
--- Get items (auto-detects chest)
+-- Get items (auto-detects first chest on network)
 local success, count = chest.get_item("minecraft:cobblestone", 32)
 
 -- Deposit items (auto-detects chest)
@@ -16,16 +16,20 @@ chest.deposit_item("minecraft:dirt", 16)
 -- Empty entire inventory (auto-detects chest)
 chest.deposit_all()
 
--- Or specify explicit direction if needed
-chest.get_item("minecraft:stone", 64, "bottom")
+-- Or specify exact chest peripheral if you have multiple chests
+chest.get_item("minecraft:stone", 64, "minecraft:chest_0")
+chest.deposit_item("minecraft:dirt", 32, "minecraft:chest_1")
 ```
 
 ## Requirements
 
-- Chest must be wrapped as a peripheral (adjacent or on wired network)
-- Direction can be: `"front"`, `"back"`, `"left"`, `"right"`, `"top"`, `"bottom"`
-- Or use peripheral names like `"minecraft:chest_0"` for networked chests
-- If direction is `nil`, automatically finds any adjacent chest
+**Important:** This module requires a **wired modem network** setup:
+1. Turtle must have a wired modem attached
+2. Chest must have a wired modem attached  
+3. Both modems must be connected via network cable
+4. Chests will have names like `"minecraft:chest_0"`, `"minecraft:chest_1"`, etc.
+
+If `peripheral_name` is `nil`, automatically finds the first chest on the network.
 
 ## Module Integration
 
@@ -55,16 +59,16 @@ local space_slot = inv.find_space_for_item("minecraft:dirt")
 
 Uses CC: Tweaked's modern peripheral API ([Documentation](https://tweaked.cc/generic_peripheral/inventory.html))
 
-### `chest.get_item(item_name, count, direction)`
+### `chest.get_item(item_name, count, peripheral_name)`
 
 Retrieve a specific item from a chest into turtle's inventory using `pushItems`.
 
 **Parameters:**
 - `item_name`: String - Full item name (e.g., `"minecraft:cobblestone"`)
 - `count`: Number - How many items to get (default: 64)
-- `direction`: String - Peripheral direction or name (default: `"front"`)
-  - Directions: `"front"`, `"back"`, `"left"`, `"right"`, `"top"`, `"bottom"`
-  - Or peripheral name: `"minecraft:chest_0"` for networked chests
+- `peripheral_name`: String or nil - Chest peripheral name (optional)
+  - Peripheral name: `"minecraft:chest_0"`, `"minecraft:chest_1"`, etc.
+  - `nil`: Auto-detect first chest on network
 
 **Returns:**
 - `success`: Boolean - true if got all requested items
@@ -72,26 +76,28 @@ Retrieve a specific item from a chest into turtle's inventory using `pushItems`.
 
 **Example:**
 ```lua
--- Get 32 oak logs from chest in front
-local success, count = chest.get_item("minecraft:oak_log", 32, "front")
+-- Get 32 oak logs from any chest on network (auto-detect)
+local success, count = chest.get_item("minecraft:oak_log", 32)
 if success then
     print("Got all 32 logs!")
 else
     print("Only got " .. count .. " logs")
 end
+
+-- Or specify exact chest
+chest.get_item("minecraft:stone", 64, "minecraft:chest_0")
 ```
 
-### `chest.deposit_item(item_name, count, direction)`
+### `chest.deposit_item(item_name, count, peripheral_name)`
 
 Deposit a specific item from turtle's inventory into a chest using `pullItems`.
 
 **Parameters:**
 - `item_name`: String - Full item name (required)
 - `count`: Number - How many to deposit (optional, default: all available)
-- `direction`: String or nil - Peripheral direction/name or nil for auto-detect
-  - Directions: `"front"`, `"back"`, `"left"`, `"right"`, `"top"`, `"bottom"`
-  - Peripheral name: `"minecraft:chest_0"`
-  - `nil`: Auto-detect any adjacent chest
+- `peripheral_name`: String or nil - Chest peripheral name (optional)
+  - Peripheral name: `"minecraft:chest_0"`, `"minecraft:chest_1"`, etc.
+  - `nil`: Auto-detect first chest on network
 
 **Returns:**
 - `success`: Boolean - true if deposited all requested items
@@ -99,37 +105,36 @@ Deposit a specific item from turtle's inventory into a chest using `pullItems`.
 
 **Examples:**
 ```lua
--- Deposit 64 cobblestone into any adjacent chest (auto-detect)
+-- Deposit 64 cobblestone into any chest on network (auto-detect)
 chest.deposit_item("minecraft:cobblestone", 64)
 
 -- Deposit all dirt (no count specified)
 chest.deposit_item("minecraft:dirt")
 
--- Deposit to specific direction
-chest.deposit_item("minecraft:gravel", 32, "bottom")
+-- Deposit to specific chest
+chest.deposit_item("minecraft:gravel", 32, "minecraft:chest_0")
 ```
 
-### `chest.deposit_all(direction)`
+### `chest.deposit_all(peripheral_name)`
 
 Empty the entire turtle inventory into a chest using `pullItems`.
 
 **Parameters:**
-- `direction`: String or nil - Peripheral direction/name or nil for auto-detect
-  - Directions: `"front"`, `"back"`, `"left"`, `"right"`, `"top"`, `"bottom"`
-  - Peripheral name: `"minecraft:chest_0"`
-  - `nil`: Auto-detect any adjacent chest
+- `peripheral_name`: String or nil - Chest peripheral name (optional)
+  - Peripheral name: `"minecraft:chest_0"`, `"minecraft:chest_1"`, etc.
+  - `nil`: Auto-detect first chest on network
 
 **Returns:**
 - `total_deposited`: Number - How many slots were deposited
 
 **Examples:**
 ```lua
--- Empty everything into any adjacent chest (auto-detect)
+-- Empty everything into any chest on network (auto-detect)
 local slots = chest.deposit_all()
 print("Emptied " .. slots .. " slots")
 
--- Or specify direction
-chest.deposit_all("bottom")
+-- Or specify exact chest
+chest.deposit_all("minecraft:chest_0")
 ```
 
 ### Inventory Helper Functions
@@ -172,10 +177,10 @@ end
 ### Sorting Items
 
 ```lua
--- Deposit specific items into designated chests
-chest.deposit_item("minecraft:cobblestone", nil, "bottom")  -- All cobble down
-chest.deposit_item("minecraft:dirt", nil, "top")            -- All dirt up
-chest.deposit_item("minecraft:gravel", nil, "front")        -- All gravel front
+-- Deposit specific items into designated chests (on wired network)
+chest.deposit_item("minecraft:cobblestone", nil, "minecraft:chest_0")  -- All cobble to chest 0
+chest.deposit_item("minecraft:dirt", nil, "minecraft:chest_1")         -- All dirt to chest 1
+chest.deposit_item("minecraft:gravel", nil, "minecraft:chest_2")       -- All gravel to chest 2
 ```
 
 ### Mining Operation with Auto-Deposit
@@ -195,10 +200,10 @@ while true do
         print("Inventory full, returning to deposit")
         -- ... navigation code to return to base ...
         
-        -- Deposit everything except tools
-        chest.deposit_item("minecraft:cobblestone", nil, "front")
-        chest.deposit_item("minecraft:dirt", nil, "front")
-        -- Keep pickaxe, etc.
+        -- Deposit everything (auto-detect chest on network)
+        chest.deposit_item("minecraft:cobblestone")
+        chest.deposit_item("minecraft:dirt")
+        -- Keep pickaxe in specific slots, don't deposit
         
         -- ... navigation back to mining ...
     end
@@ -209,31 +214,31 @@ end
 
 ```lua
 -- Get exact materials for crafting
-chest.get_item("minecraft:stick", 2, "front")
-chest.get_item("minecraft:diamond", 3, "front")
+chest.get_item("minecraft:stick", 2)  -- Auto-detect
+chest.get_item("minecraft:diamond", 3)
 
 -- Craft diamond pickaxe
 -- ... crafting code ...
 
 -- Deposit the result
-chest.deposit_item("minecraft:diamond_pickaxe", 1, "front")
+chest.deposit_item("minecraft:diamond_pickaxe", 1)
 ```
 
 ### Fuel Management
 
 ```lua
 local chest = require('/repo/src/chest/chest')
+local inv = require('/repo/src/turtle/inv')
 
 -- Check fuel level
 if turtle.getFuelLevel() < 1000 then
     print("Low on fuel, restocking")
     
     -- Get coal from fuel chest
-    local success, count = chest.get_item("minecraft:coal", 16, "bottom")
+    local success, count = chest.get_item("minecraft:coal", 16)  -- Auto-detect
     
     if success then
         -- Refuel from inventory
-        local inv = require('/repo/src/turtle/inv')
         inv.refuel(true)
     end
 end
@@ -243,16 +248,17 @@ end
 
 ```lua
 -- Take items from input chest, process, deposit to output chest
+-- Uses multiple chests on wired network
 
--- Get raw materials from input (below)
-local got_iron, iron_count = chest.get_item("minecraft:raw_iron", 64, "bottom")
+-- Get raw materials from input chest
+local got_iron, iron_count = chest.get_item("minecraft:raw_iron", 64, "minecraft:chest_0")
 
 if got_iron then
     -- Smelt or process items
     -- ... processing code ...
     
-    -- Deposit finished product to output (above)
-    chest.deposit_item("minecraft:iron_ingot", iron_count, "top")
+    -- Deposit finished product to output chest
+    chest.deposit_item("minecraft:iron_ingot", iron_count, "minecraft:chest_1")
 end
 ```
 
@@ -315,11 +321,13 @@ All functions handle errors gracefully:
 
 ## Tips
 
-1. **Use F3+H** in Minecraft to see full item IDs
-2. **Auto-detect is convenient** - omit direction parameter to find any adjacent chest
-3. **Use inv module** for inventory queries (`count_item`, `has_item`, `find_item`)
-4. **Check return values** - operations may partially succeed (returns actual count)
-5. **No count = all** - omit count parameter to get/deposit all available
-6. **Networked chests** - can access chests on wired network using peripheral names
-7. **Stack limits respected** - automatically handles max stack sizes and slot space
+1. **Wired modem setup required** - Both turtle and chests need wired modems connected via cables
+2. **Check peripheral names** - Use `peripheral.getNames()` to see available chests on network
+3. **Use F3+H** in Minecraft to see full item IDs
+4. **Auto-detect is convenient** - omit peripheral_name parameter to find first chest
+5. **Use inv module** for inventory queries (`count_item`, `has_item`, `find_item`)
+6. **Check return values** - operations may partially succeed (returns actual count)
+7. **No count = all** - omit count parameter to get/deposit all available
+8. **Multiple chests** - Use specific peripheral names to target different chests
+9. **Stack limits respected** - automatically handles max stack sizes and slot space
 

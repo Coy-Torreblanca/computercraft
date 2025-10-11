@@ -15,42 +15,39 @@ inv = require('/repo/src/turtle/inv')
 
 local M = {}
 
-local function get_chest_peripheral(direction)
-    -- Get a chest peripheral by direction, name, or auto-detect.
+local function get_chest_peripheral(peripheral_name)
+    -- Get a chest peripheral by name or auto-detect.
     --
-    -- If direction is nil, automatically finds the first available chest
-    -- peripheral touching the turtle.
+    -- If peripheral_name is nil, automatically finds the first available chest
+    -- peripheral on the network.
     --
     -- Args:
-    --     direction: String or nil
-    --                - Peripheral direction: "front", "back", "left", "right", "top", "bottom"
-    --                - Peripheral name: "minecraft:chest_0" (for networked chests)
-    --                - nil: Auto-detect any adjacent chest
+    --     peripheral_name: String or nil
+    --                      - Peripheral name: "minecraft:chest_0", "minecraft:chest_1", etc.
+    --                      - nil: Auto-detect first available chest
     --
     -- Returns:
     --     chest: Peripheral wrapper for the chest, or nil if not found
     --     error_msg: String error message if chest not found
     
     local chest = nil
-    if not direction then
-        local chests = { peripheral.find("minecraft:chest") }
+    if not peripheral_name then
+        chests = { peripheral.find("minecraft:chest") }
         if #chests == 0 then
             return nil, "No chests found"
         end
         chest = chests[1]
     else
-        -- Try to wrap the peripheral
-        chest = peripheral.wrap(direction)
-
+        chest = peripheral.find("minecraft:chest", function (name, _) return name == peripheral_name end)
     end
     
     if not chest then
-        return nil, "No peripheral found at '" .. direction .. "'"
+        return nil, "No peripheral found with name '" .. (peripheral_name or "auto") .. "'"
     end
     
     -- Verify it has inventory methods
     if not chest.list or not chest.pullItems or not chest.pushItems then
-        return nil, "Peripheral at '" .. direction .. "' is not an inventory"
+        return nil, "Peripheral '" .. (peripheral_name or "auto") .. "' is not an inventory"
     end
     
     return chest, nil
@@ -64,39 +61,41 @@ local function get_turtle_name()
     return modem.getNameLocal()
 end
 
-function M.get_item(item_name, count, direction)
+function M.get_item(item_name, count, peripheral_name)
     -- Get a specific item from a chest into turtle's inventory using peripheral API.
     --
     -- Searches for the specified item in the chest and pushes it to the turtle.
-    -- Uses CC: Tweaked's peripheral inventory API.
+    -- Uses CC: Tweaked's peripheral inventory API via wired modem network.
     --
     -- Args:
     --     item_name: String, full item name (e.g. "minecraft:stone", "minecraft:oak_log")
     --     count: Number of items to get (optional, default: 64)
-    --     direction: String or nil, chest location (optional, default: nil for auto-detect)
-    --                - Direction: "front", "back", "left", "right", "top", "bottom"
-    --                - Peripheral name: "minecraft:chest_0" (for networked chests)
-    --                - nil: Auto-detect any adjacent chest
+    --     peripheral_name: String or nil, chest peripheral name (optional, default: nil for auto-detect)
+    --                      - Peripheral name: "minecraft:chest_0", "minecraft:chest_1", etc.
+    --                      - nil: Auto-detect first available chest on network
     --
     -- Returns:
     --     success: Boolean, true if got all requested items
     --     actual_count: Number of items actually retrieved
     --
     -- Example:
-    --     -- Get 32 cobblestone from any adjacent chest
+    --     -- Get 32 cobblestone from any chest on network (auto-detect)
     --     local success, count = chest.get_item("minecraft:cobblestone", 32)
     --     
-    --     -- Or specify direction
-    --     local success, count = chest.get_item("minecraft:cobblestone", 32, "front")
+    --     -- Or specify exact chest peripheral
+    --     local success, count = chest.get_item("minecraft:cobblestone", 32, "minecraft:chest_0")
+    --
+    -- Note:
+    --     Requires turtle and chest to be on same wired modem network.
     
     count = count or 1
-    -- direction can be nil for auto-detect
+    -- peripheral_name can be nil for auto-detect
     
     assert(type(item_name) == "string", "item_name must be a string")
     assert(type(count) == "number" and count > 0, "count must be a positive number")
     
     -- Get the chest peripheral
-    local chest_inv, err = get_chest_peripheral(direction)
+    local chest_inv, err = get_chest_peripheral(peripheral_name)
     if not chest_inv then
         print("[GET_ITEM] " .. err)
         return false, 0
@@ -146,34 +145,36 @@ function M.get_item(item_name, count, direction)
     return success, items_retrieved
 end
 
-function M.deposit_item(item_name, count, direction)
+function M.deposit_item(item_name, count, peripheral_name)
     -- Deposit a specific item from turtle's inventory into a chest using peripheral API.
     --
     -- Searches turtle's inventory for the specified item and pulls it into the chest.
     -- Automatically finds all stacks of the item and deposits until count is reached.
-    -- Uses CC: Tweaked's peripheral inventory API.
+    -- Uses CC: Tweaked's peripheral inventory API via wired modem network.
     --
     -- Args:
     --     item_name: String, full item name (e.g. "minecraft:stone", "minecraft:cobblestone")
     --     count: Number of items to deposit (optional, default: all available)
-    --     direction: String or nil, chest location (optional, default: nil for auto-detect)
-    --                - Direction: "front", "back", "left", "right", "top", "bottom"
-    --                - Peripheral name: "minecraft:chest_0"
-    --                - nil: Auto-detect any adjacent chest
+    --     peripheral_name: String or nil, chest peripheral name (optional, default: nil for auto-detect)
+    --                      - Peripheral name: "minecraft:chest_0", "minecraft:chest_1", etc.
+    --                      - nil: Auto-detect first available chest on network
     --
     -- Returns:
     --     success: Boolean, true if deposited all requested items
     --     actual_count: Number of items actually deposited
     --
     -- Example:
-    --     -- Deposit 32 cobblestone into any adjacent chest
+    --     -- Deposit 32 cobblestone into any chest on network (auto-detect)
     --     local success, count = chest.deposit_item("minecraft:cobblestone", 32)
     --     
     --     -- Deposit all dirt (no count = all available)
     --     local success, count = chest.deposit_item("minecraft:dirt")
     --     
-    --     -- Specify direction
-    --     local success, count = chest.deposit_item("minecraft:gravel", 64, "bottom")
+    --     -- Specify exact chest peripheral
+    --     local success, count = chest.deposit_item("minecraft:gravel", 64, "minecraft:chest_0")
+    --
+    -- Note:
+    --     Requires turtle and chest to be on same wired modem network.
     
     
     if not item_name then
@@ -184,7 +185,7 @@ function M.deposit_item(item_name, count, direction)
     end
     
     -- Get the chest peripheral
-    local chest_inv, err = get_chest_peripheral(direction)
+    local chest_inv, err = get_chest_peripheral(peripheral_name)
     if not chest_inv then
         print("[DEPOSIT_ITEM] " .. err)
         return false, 0
@@ -234,24 +235,26 @@ function M.deposit_item(item_name, count, direction)
     return success, items_deposited
     end
     
-function M.deposit_all(direction)
+function M.deposit_all(peripheral_name)
     -- Deposit all items from turtle's inventory into a chest using peripheral API.
     --
     -- Args:
-    --     direction: String or nil, chest location (optional, default: nil for auto-detect)
-    --                - Direction: "front", "back", "left", "right", "top", "bottom"
-    --                - Peripheral name: "minecraft:chest_0"
-    --                - nil: Auto-detect any adjacent chest
+    --     peripheral_name: String or nil, chest peripheral name (optional, default: nil for auto-detect)
+    --                      - Peripheral name: "minecraft:chest_0", "minecraft:chest_1", etc.
+    --                      - nil: Auto-detect first available chest on network
     --
     -- Returns:
     --     total_deposited: Number of slots deposited
     --
     -- Example:
-    --     chest.deposit_all()           -- Auto-detect chest
-    --     chest.deposit_all("bottom")   -- Empty entire inventory into chest below
+    --     chest.deposit_all()                     -- Auto-detect chest
+    --     chest.deposit_all("minecraft:chest_0")  -- Specific chest
+    --
+    -- Note:
+    --     Requires turtle and chest to be on same wired modem network.
     
     -- Get the chest peripheral
-    local chest_inv, err = get_chest_peripheral(direction)
+    local chest_inv, err = get_chest_peripheral(peripheral_name)
     if not chest_inv then
         print("[DEPOSIT_ALL] " .. err)
         return 0
