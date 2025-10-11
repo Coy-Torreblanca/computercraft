@@ -157,6 +157,53 @@ local_valid_fuel_items = {
     'minecraft:charcoal_block',
 }
 
+function M.count_item(item_name)
+    -- Count total number of a specific item across all inventory slots.
+    --
+    -- Args:
+    --     item_name: String, full item name to count
+    --
+    -- Returns:
+    --     count: Number, total count across all slots
+    --
+    -- Example:
+    --     local cobble_count = inv.count_item("minecraft:cobblestone")
+    
+    assert(type(item_name) == "string", "item_name must be a string")
+    
+    local total = 0
+    for slot = 1, 16 do
+        local item = turtle.getItemDetail(slot)
+        if item and item.name == item_name then
+            total = total + item.count
+        end
+    end
+    
+    return total
+end
+
+function M.get_empty_slots()
+    -- Count number of empty slots in turtle's inventory.
+    --
+    -- Returns:
+    --     count: Number of empty slots (0-16)
+    --
+    -- Example:
+    --     local empty = inv.get_empty_slots()
+    --     if empty < 3 then
+    --         print("Inventory almost full!")
+    --     end
+    
+    local empty = 0
+    for slot = 1, 16 do
+        if not turtle.getItemDetail(slot) then
+            empty = empty + 1
+        end
+    end
+    
+    return empty
+end
+
 function M.refuel(force)
     -- Refuel the turtle.
     -- Returns: Boolean depending on success.
