@@ -175,8 +175,11 @@ function M.get_facing_coordinate_style()
     return COORDINATE_STYLE[canonical]
 end
 
-function M.move_forward()
+function M.move_forward(force)
     -- Move the turtle forward one block and update cached location.
+    --
+    -- Args:
+    --     force: Optional boolean, if true will dig through obstacles
     --
     -- Returns:
     --     success: Boolean, true if move succeeded
@@ -185,7 +188,7 @@ function M.move_forward()
     inv.refuel()
 
     if turtle.getFuelLevel() == 0 then
-        error("[FIND_FACING] No fuel")
+        error("[MOVE_FORWARD] No fuel")
     end
 
     local current_direction = M.find_facing()
@@ -194,8 +197,18 @@ function M.move_forward()
         error("[MOVE_FORWARD] Failed to find facing")
     end
 
+    -- Try to move, or force dig if enabled
     if not turtle.forward() then
-        return false, nil
+        if force then
+            turtle.dig()
+            sleep(0.5)  -- Wait for block to break
+            
+            if not turtle.forward() then
+                return false, nil  -- Still blocked (bedrock, entity, etc)
+            end
+        else
+            return false, nil
+        end
     end
 
     if current_direction == "east" then
@@ -211,8 +224,11 @@ function M.move_forward()
     return true, M.current_location
 end
 
-function M.move_back()
+function M.move_back(force)
     -- Move the turtle backward one block and update cached location.
+    --
+    -- Args:
+    --     force: Optional boolean, if true will dig through obstacles behind
     --
     -- Returns:
     --     success: Boolean, true if move succeeded
@@ -221,7 +237,7 @@ function M.move_back()
     inv.refuel()
 
     if turtle.getFuelLevel() == 0 then
-        error("[FIND_FACING] No fuel")
+        error("[MOVE_BACK] No fuel")
     end
 
     local current_direction = M.find_facing()
@@ -230,8 +246,23 @@ function M.move_back()
         error("[MOVE_BACK] Failed to find facing")
     end
 
+    -- Try to move back, or force dig behind if enabled
     if not turtle.back() then
-        return false, nil
+        if force then
+            -- Turn around, dig, move, turn back
+            M.turn_right()
+            M.turn_right()
+            turtle.dig()
+            sleep(0.5)
+            M.turn_right()
+            M.turn_right()
+            
+            if not turtle.back() then
+                return false, nil
+            end
+        else
+            return false, nil
+        end
     end
 
     if current_direction == "east" then
@@ -247,8 +278,11 @@ function M.move_back()
     return true, M.current_location
 end
 
-function M.move_up()
+function M.move_up(force)
     -- Move the turtle up one block and update cached location.
+    --
+    -- Args:
+    --     force: Optional boolean, if true will dig through obstacles above
     --
     -- Returns:
     --     success: Boolean, true if move succeeded
@@ -257,16 +291,24 @@ function M.move_up()
     inv.refuel()
 
     if turtle.getFuelLevel() == 0 then
-        error("[FIND_FACING] No fuel")
+        error("[MOVE_UP] No fuel")
     end
 
     M.get_current_location()
 
-
+    -- Try to move up, or force dig if enabled
     if not turtle.up() then
-        return false, nil
+        if force then
+            turtle.digUp()
+            sleep(0.5)  -- Wait for block to break
+            
+            if not turtle.up() then
+                return false, nil  -- Still blocked
+            end
+        else
+            return false, nil
+        end
     end
-
 
     if not M.current_location then
         error("[MOVE_UP] Failed to get current location")
@@ -274,12 +316,14 @@ function M.move_up()
 
     M.current_location.y = M.current_location.y + 1
 
-
     return true, M.current_location
 end
 
-function M.move_down()
+function M.move_down(force)
     -- Move the turtle down one block and update cached location.
+    --
+    -- Args:
+    --     force: Optional boolean, if true will dig through obstacles below
     --
     -- Returns:
     --     success: Boolean, true if move succeeded
@@ -288,13 +332,23 @@ function M.move_down()
     inv.refuel()
 
     if turtle.getFuelLevel() == 0 then
-        error("[FIND_FACING] No fuel")
+        error("[MOVE_DOWN] No fuel")
     end
 
     M.get_current_location()
 
+    -- Try to move down, or force dig if enabled
     if not turtle.down() then
-        return false, nil
+        if force then
+            turtle.digDown()
+            sleep(0.5)  -- Wait for block to break
+            
+            if not turtle.down() then
+                return false, nil  -- Still blocked
+            end
+        else
+            return false, nil
+        end
     end
 
     if not M.current_location then
@@ -386,7 +440,7 @@ function M.turn_direction(direction)
     return true
 end
 
-function M.move_direction(direction)
+function M.move_direction(direction, force)
     -- Turn to face a direction and move forward one block.
     --
     -- Convenience function that combines turn_direction() and move_forward().
@@ -394,6 +448,7 @@ function M.move_direction(direction)
     --
     -- Args:
     --     direction: Target direction string (cardinal or coordinate style)
+    --     force: Optional boolean, if true will dig through obstacles
     --
     -- Returns:
     --     success: Boolean, true if both turn and move succeeded
@@ -407,7 +462,7 @@ function M.move_direction(direction)
         return false, nil
     end
 
-    local success, location = M.move_forward()
+    local success, location = M.move_forward(force)
     if not success then
         return false, nil
     end
@@ -416,7 +471,7 @@ function M.move_direction(direction)
 
 end
 
-function M.goto_location(x, y, z)
+function M.goto_location(x, y, z, force)
     -- Navigate turtle to target location using simple axis-by-axis pathfinding.
     --
     -- Algorithm: Try to move along each axis (x, y, z) in sequence. If blocked on one
@@ -426,6 +481,7 @@ function M.goto_location(x, y, z)
     --     x: Target X coordinate
     --     y: Target Y coordinate  
     --     z: Target Z coordinate
+    --     force: Optional boolean, if true will dig through obstacles
     --
     -- Returns:
     --     success: Boolean, true if reached target location
@@ -448,21 +504,21 @@ function M.goto_location(x, y, z)
         
         if axis == "x" then
             if delta.x > 0 then
-                return M.move_direction("towards_x")
+                return M.move_direction("towards_x", force)
             elseif delta.x < 0 then
-                return M.move_direction("away_x")
+                return M.move_direction("away_x", force)
             end
         elseif axis == "z" then
             if delta.z > 0 then
-                return M.move_direction("towards_z")
+                return M.move_direction("towards_z", force)
             elseif delta.z < 0 then
-                return M.move_direction("away_z")
+                return M.move_direction("away_z", force)
             end
         elseif axis == "y" then
             if delta.y > 0 then
-                return M.move_up()
+                return M.move_up(force)
             elseif delta.y < 0 then
-                return M.move_down()
+                return M.move_down(force)
             end
         end
         

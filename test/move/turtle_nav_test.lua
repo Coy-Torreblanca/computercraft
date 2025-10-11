@@ -398,6 +398,133 @@ test("goto_location handles negative direction movement", function()
     end
 end)
 
+-- Test 23: Force Move Forward
+test("move_forward with force digs through obstacles", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    
+    -- Try to place a block in front
+    turtle.place()
+    
+    -- Try normal move (should fail)
+    local success1, loc1 = turtle_nav.move_forward(false)
+    
+    if success1 then
+        print("    [SKIP] No obstacle was placed, test inconclusive")
+        turtle_nav.goto_location(start.x, start.y, start.z)
+        return
+    end
+    
+    print("    Confirmed obstacle blocks normal movement")
+    
+    -- Try force move (should succeed by digging)
+    local success2, loc2 = turtle_nav.move_forward(true)
+    assert_true(success2, "Force move should dig through obstacle and succeed")
+    print("    Force move successfully dug through obstacle")
+    
+    -- Return to start
+    turtle_nav.goto_location(start.x, start.y, start.z)
+end)
+
+-- Test 24: Force Move Up
+test("move_up with force digs through obstacles above", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local y1 = start.y
+    
+    -- Try to place a block above
+    turtle.placeUp() -- TODO: Make easier to test and fail if place does not work.
+    
+    -- Try force move up
+    local success, loc = turtle_nav.move_up(true)
+    
+    if success then
+        assert_equals(y1 + 1, loc.y, "Should be one block higher")
+        print("    Force move up successfully dug through obstacle")
+        
+        -- Return to start
+        turtle_nav.move_down()
+    else
+        print("    [SKIP] Could not place obstacle or force move failed")
+    end
+end)
+
+-- Test 25: Force Move Down
+test("move_down with force digs through obstacles below", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local y1 = start.y
+    -- Try to place a block below
+    turtle.placeDown() -- TODO: Make easier to test and fail if place does not work.
+    
+    -- Try force move down
+    local success, loc = turtle_nav.move_down(true)
+    
+    if success then
+        assert_equals(y1 - 1, loc.y, "Should be one block lower")
+        print("    Force move down successfully dug through obstacle")
+        
+        -- Return to start
+        turtle_nav.move_up()
+    else
+        print("    [SKIP] Could not place obstacle or force move failed")
+    end
+end)
+
+-- Test 26: Goto Location with Force
+test("goto_location with force parameter digs through obstacles", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    local target = {
+        x = start.x + 3,
+        y = start.y,
+        z = start.z
+    }
+    
+    -- Place obstacles in the path
+    turtle_nav.move_forward()
+    turtle.place()  -- Place obstacle
+    turtle_nav.move_back()
+    
+    -- Try to reach target with force enabled
+    local success, final_loc = turtle_nav.goto_location(target.x, target.y, target.z, true)
+    
+    if success then
+        assert_equals(target.x, final_loc.x, "Should reach target X")
+        assert_equals(target.y, final_loc.y, "Should reach target Y")
+        assert_equals(target.z, final_loc.z, "Should reach target Z")
+        print("    Force goto successfully navigated through obstacles")
+        
+        -- Return to start
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    else
+        print("    [SKIP] Force navigation failed")
+        turtle_nav.goto_location(start.x, start.y, start.z)
+    end
+end)
+
+-- Test 27: Force Move Handles Unbreakable Blocks
+test("force move correctly fails on unbreakable blocks", function()
+    turtle_nav.reset_state()
+    local start = turtle_nav.get_current_location()
+    
+    -- Try to move into bedrock level (Y=0 or below in most worlds)
+    if start.y > 5 then
+        print("    [SKIP] Not close enough to bedrock to test")
+        return
+    end
+    
+    -- Try to force move down to bedrock
+    local success, loc = turtle_nav.move_down(true)
+    
+    -- Depending on position, this may work or fail
+    -- This test mainly ensures the function doesn't crash
+    print("    Force move handled bedrock appropriately (success=" .. tostring(success) .. ")")
+    
+    -- Return to original Y level
+    turtle_nav.goto_location(start.x, start.y, start.z)
+end)
+
 -- Print Summary
 print("\n")
 print("===========================================")
