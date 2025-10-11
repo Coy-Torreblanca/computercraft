@@ -33,7 +33,7 @@ local function get_chest_peripheral(direction)
     
     local chest = nil
     if not direction then
-        local chests = { peripheral.find("chest") }
+        local chests = { peripheral.find("minecraft:chest") }
         if #chests == 0 then
             return nil, "No chests found"
         end
@@ -54,6 +54,14 @@ local function get_chest_peripheral(direction)
     end
     
     return chest, nil
+end
+
+local function get_turtle_name()
+    local modem = peripheral.find("modem")
+    if not modem then
+        return nil, "No modem found"
+    end
+    return modem.getNameLocal()
 end
 
 function M.get_item(item_name, count, direction)
@@ -95,7 +103,7 @@ function M.get_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = "self"  -- Turtles can reference themselves as "self"
+    local turtle_name = get_turtle_name()
     
     local items_retrieved = 0
     
@@ -183,7 +191,7 @@ function M.deposit_item(item_name, count, direction)
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = "self"
+    local turtle_name = get_turtle_name()
     
     local items_deposited = 0
     
@@ -249,7 +257,7 @@ function M.deposit_all(direction)
         return 0
     end
     
-    local turtle_name = "self"
+    local turtle_name = get_turtle_name()
     local slots_deposited = 0
     
     for slot = 1, 16 do
