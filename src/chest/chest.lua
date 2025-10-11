@@ -33,7 +33,7 @@ local function get_chest_peripheral(direction)
     
     local chest = nil
     if not direction then
-        local chests = { peripheral.find("chest") }
+        local chests = { peripheral.find("minecraft:chest") }
         if #chests == 0 then
             return nil, "No chests found"
         end
