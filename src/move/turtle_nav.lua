@@ -8,6 +8,8 @@ Supports both cardinal directions (north, south, east, west) and coordinate-base
 directions (towards_x, away_x, towards_z, away_z).
 ]]
 
+local inv = require('/repo/src/turtle/inv')
+
 M = {}
 
 M.current_direction = nil
@@ -94,6 +96,12 @@ function M.find_facing()
     -- Raises:
     --     error: If unable to move forward in any direction or unable to move back
 
+    inv.refuel()
+
+    if turtle.getFuelLevel() == 0 then
+        error("[FIND_FACING] No fuel")
+    end
+
     if M.current_direction then
         return M.current_direction
     end
@@ -174,6 +182,12 @@ function M.move_forward()
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
 
+    inv.refuel()
+
+    if turtle.getFuelLevel() == 0 then
+        error("[FIND_FACING] No fuel")
+    end
+
     local current_direction = M.find_facing()
 
     if current_direction == nil then
@@ -203,6 +217,13 @@ function M.move_back()
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+
+    inv.refuel()
+
+    if turtle.getFuelLevel() == 0 then
+        error("[FIND_FACING] No fuel")
+    end
+
     local current_direction = M.find_facing()
 
     if current_direction == nil then
@@ -232,6 +253,13 @@ function M.move_up()
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+
+    inv.refuel()
+
+    if turtle.getFuelLevel() == 0 then
+        error("[FIND_FACING] No fuel")
+    end
+
     M.get_current_location()
 
 
@@ -256,6 +284,13 @@ function M.move_down()
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+
+    inv.refuel()
+
+    if turtle.getFuelLevel() == 0 then
+        error("[FIND_FACING] No fuel")
+    end
+
     M.get_current_location()
 
     if not turtle.down() then

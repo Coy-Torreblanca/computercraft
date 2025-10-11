@@ -133,4 +133,26 @@ function M.ensure_attached(peripheral_name, side)
 
 end
 
+local_valid_fuel_items = {
+    'minecraft:coal',
+    'minecraft:charcoal',
+    'minecraft:coal_block',
+    'minecraft:charcoal_block',
+}
+
+function M.refuel()
+    -- Refuel the turtle.
+    -- Returns: Boolean depending on success.
+    local current_slot = turtle.getSelectedSlot()
+    for _, item in ipairs(local_valid_fuel_items) do
+        local slot = M.find_item(item)
+        if (slot) then
+            turtle.select(slot)
+            return turtle.refuel()
+        end
+    end
+    turtle.select(current_slot)
+    return false, "No valid fuel items found."
+end
+
 return M
