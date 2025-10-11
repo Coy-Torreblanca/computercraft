@@ -1,6 +1,6 @@
 local M = {}
 
-function M.findItem(item_name)
+function M.find_item(item_name)
     -- check current item slot return slot numger with item or nil.
 
     -- Check if current slot has target item.
@@ -21,7 +21,7 @@ function M.findItem(item_name)
     end
 end
 
-function M.findEmptySlot()
+function M.find_empty_slot()
     -- Find an empty inventory slot.
     -- Returns slot number or nill if no nexist.
 
@@ -40,7 +40,7 @@ function M.findEmptySlot()
     end
 end
 
-function M.ensureAttached(peripheral_name, side)
+function M.ensure_attached(peripheral_name, side)
     -- Ensure that the peripheral is attached at target side.
     -- Returns: Boolean depending on success.
 
@@ -81,7 +81,7 @@ function M.ensureAttached(peripheral_name, side)
 
         -- detach item from incorrect side and reattach to correct side.
 
-        local empty_slot = M.findEmptySlot()
+        local empty_slot = M.find_empty_slot()
 
         if (not empty_slot) then
             return false, "No empty slot found."
@@ -115,7 +115,7 @@ function M.ensureAttached(peripheral_name, side)
     end
 
     -- Find peripheral and attach if possible.
-    local slot_with_peripheral = M.findItem(peripheral_name)
+    local slot_with_peripheral = M.find_item(peripheral_name)
 
     if (not slot_with_peripheral) then
         return false, "Target peripheral not in inventory"
