@@ -16,10 +16,20 @@ print("")
 
 -- Test setup
 print("TEST SETUP:")
-print("- Turtle should be positioned next to a chest (any side)")
+print("- Turtle must have a wired modem attached")
+print("- Chest must have a wired modem attached")
+print("- Both must be connected via network cable")
 print("- Chest should contain some test items (cobblestone recommended)")
 print("- Press Enter to continue or Ctrl+T to cancel")
 read()
+
+-- List available peripherals
+print("\nAvailable peripherals on network:")
+local peripherals = peripheral.getNames()
+for _, name in ipairs(peripherals) do
+    print("  - " .. name)
+end
+print("")
 
 local TEST_RESULTS = {
     passed = 0,
@@ -140,24 +150,30 @@ test("get_item handles partial retrieval", function()
     end
 end)
 
--- Test 7: Different directions (explicit)
-test("chest operations work with explicit directions", function()
+-- Test 7: Explicit peripheral names
+test("chest operations work with explicit peripheral names", function()
     chest.deposit_all()  -- Clear first
     
-    print("    Testing explicit 'front' direction:")
-    local success_front, count_front = chest.get_item("minecraft:cobblestone", 5, "front")
-    print("    Retrieved " .. count_front .. " from front")
-    
-    if count_front > 0 then
-        -- Deposit back
-        chest.deposit_item("minecraft:cobblestone", count_front, "front")
-        print("    Successfully used explicit direction")
-    else
-        print("    [SKIP] No chest at 'front' or no items")
+    -- Find first chest on network
+    local chest_periph = peripheral.find("minecraft:chest")
+    if not chest_periph then
+        print("    [SKIP] No chest found on network")
+        return
     end
     
-    -- Note: For 'top' and 'bottom' tests, turtle needs chests in those positions
-    print("    Note: Other directions require chests in those positions")
+    local chest_name = peripheral.getName(chest_periph)
+    print("    Testing explicit peripheral name: " .. chest_name)
+    
+    local success, count = chest.get_item("minecraft:cobblestone", 5, chest_name)
+    print("    Retrieved " .. count .. " using explicit peripheral name")
+    
+    if count > 0 then
+        -- Deposit back
+        chest.deposit_item("minecraft:cobblestone", count, chest_name)
+        print("    Successfully used explicit peripheral name")
+    else
+        print("    [SKIP] No items in chest")
+    end
 end)
 
 -- Test 8: Deposit all available of an item
