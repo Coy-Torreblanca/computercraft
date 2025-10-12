@@ -155,7 +155,7 @@ function M.find_facing()
 
     -- reset to original direction
     for i = 1, turn_count do
-        m.turn_left()
+        M.turn_left()
     end
 
 
@@ -569,6 +569,133 @@ function M.goto_location(x, y, z, force)
     
     -- Hit iteration limit (should never happen in normal operation)
     error("[GOTO_LOCATION] Exceeded maximum iterations. Possible infinite loop.")
+end
+
+function M.distance_between(pos1, pos2)
+    -- Calculate the Manhattan distance (number of moves) between two positions.
+    --
+    -- Returns the total number of moves required to get from pos1 to pos2,
+    -- assuming no obstructions. This is the sum of absolute differences on
+    -- each axis (|dx| + |dy| + |dz|).
+    --
+    -- Args:
+    --     pos1: Table with {x, y, z} for first position
+    --     pos2: Table with {x, y, z} for second position
+    --
+    -- Returns:
+    --     distance: Number, total moves required (minimum, no obstacles)
+    --
+    -- Example:
+    --     local home = {x = 0, y = 64, z = 0}
+    --     local mine = {x = 100, y = 50, z = 200}
+    --     local moves = turtle_nav.distance_between(home, mine)
+    --     print("Mining site is " .. moves .. " moves away")  -- Output: 314 moves
+    
+    assert(pos1 and pos1.x and pos1.y and pos1.z, "pos1 must have x, y, z coordinates")
+    assert(pos2 and pos2.x and pos2.y and pos2.z, "pos2 must have x, y, z coordinates")
+    
+    local dx = math.abs(pos2.x - pos1.x)
+    local dy = math.abs(pos2.y - pos1.y)
+    local dz = math.abs(pos2.z - pos1.z)
+    
+    return dx + dy + dz
+end
+
+function M.distance_to(x, y, z)
+    -- Calculate distance from current position to target coordinates.
+    --
+    -- Convenience wrapper around distance_between using current location.
+    --
+    -- Args:
+    --     x: Target X coordinate
+    --     y: Target Y coordinate
+    --     z: Target Z coordinate
+    --
+    -- Returns:
+    --     distance: Number, total moves required from current position
+    --
+    -- Example:
+    --     local moves = turtle_nav.distance_to(100, 64, 200)
+    --     print("Destination is " .. moves .. " moves away")
+    --     
+    --     if moves > turtle.getFuelLevel() then
+    --         print("Not enough fuel!")
+    --     end
+    
+    local current = M.get_current_location()
+    return M.distance_between(current, {x = x, y = y, z = z})
+end
+
+function M.look_for_block(block_name)
+    -- Scan all six directions looking for a specific block.
+    --
+    -- Checks all four cardinal directions (north, south, east, west), then up, then down.
+    -- Rotates the turtle to inspect each direction, then returns to original facing.
+    --
+    -- Args:
+    --     block_name: String, full block name to search for (e.g. "minecraft:chest", "minecraft:lava")
+    --
+    -- Returns:
+    --     found: Boolean, true if block was found in any direction
+    --     direction: String or nil, direction where block was found
+    --                - Cardinal: "north", "south", "east", "west"
+    --                - Vertical: "up", "down"
+    --                - Returns nil if not found
+    --
+    -- Example:
+    --     local found, direction = turtle_nav.look_for_block("minecraft:lava")
+    --     if found then
+    --         print("Found lava to the " .. direction)
+    --         if direction == "up" or direction == "down" then
+    --             print("Block is vertical")
+    --         else
+    --             turtle_nav.turn_direction(direction)  -- Face the block
+    --         end
+    --     end
+    
+    -- Save starting direction to restore later
+    local starting_direction = M.find_facing()
+    
+    -- Check all 4 cardinal directions (horizontal)
+    for i = 1, 4 do
+        -- Inspect block in front of turtle
+        local has_block, block_data = turtle.inspect()
+        
+        if has_block and block_data.name == block_name then
+            -- Found the target block!
+            local direction_block_found = M.find_facing()
+            
+            -- Return to original facing direction
+            M.turn_direction(starting_direction)
+            
+            -- Return success and the direction where block was found
+            return true, direction_block_found
+        end
+        
+        -- Turn right to check next direction
+        M.turn_right()
+    end
+    
+    -- Check above
+    local has_block_up, block_data_up = turtle.inspectUp()
+    if has_block_up and block_data_up.name == block_name then
+        -- Return to original facing direction
+        M.turn_direction(starting_direction)
+        return true, "up"
+    end
+    
+    -- Check below
+    local has_block_down, block_data_down = turtle.inspectDown()
+    if has_block_down and block_data_down.name == block_name then
+        -- Return to original facing direction  
+        M.turn_direction(starting_direction)
+        return true, "down"
+    end
+    
+    -- Block not found in any direction, return to starting direction
+    M.turn_direction(starting_direction)
+    
+    return false, nil
 end
 
 return M

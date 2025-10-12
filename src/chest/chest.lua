@@ -11,9 +11,44 @@ References:
 - https://tweaked.cc/generic_peripheral/inventory.html
 ]]
 
-inv = require('/repo/src/turtle/inv')
+local inv = require('/repo/src/turtle/inv')
+local turtle_nav = require('/repo/src/move/turtle_nav')
 
 local M = {}
+
+function M.turn_to_modem()
+    -- Search for and turn turtle to face a wired modem.
+    --
+    -- Scans all six directions for a wired modem and rotates the turtle to face it.
+    -- Useful for connecting to a wired network or aligning with network infrastructure.
+    --
+    -- Returns:
+    --     success: Boolean, true if modem was found and turtle turned to face it
+    --
+    -- Example:
+    --     if chest.turn_to_modem() then
+    --         print("Now facing wired modem")
+    --         -- Can now interact with networked peripherals
+    --     else
+    --         print("No wired modem found nearby")
+    --     end
+    --
+    -- Note:
+    --     Only turns if modem is in a horizontal direction (north/south/east/west).
+    --     If modem is above or below, returns true but doesn't change facing.
+    
+    local result, modem_direction = turtle_nav.look_for_block("computercraft:wired_modem_full")
+    if not result then
+        return false
+    end
+    
+    -- If modem is horizontal, turn to face it
+    if modem_direction ~= "up" and modem_direction ~= "down" then
+        turtle_nav.turn_direction(modem_direction)
+    end
+    
+    return true
+end
 
 local function get_chest_peripheral(peripheral_name)
     -- Get a chest peripheral by name or auto-detect.
@@ -31,6 +66,11 @@ local function get_chest_peripheral(peripheral_name)
     --     error_msg: String error message if chest not found
     
     local chest = nil
+
+    if not M.turn_to_modem() then
+        return nil, "No modem found"
+    end
+
     if not peripheral_name then
         chests = { peripheral.find("minecraft:chest") }
         if #chests == 0 then
