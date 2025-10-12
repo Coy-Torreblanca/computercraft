@@ -10,7 +10,7 @@ directions (towards_x, away_x, towards_z, away_z).
 
 local inv = require('/repo/src/turtle/inv')
 
-M = {}
+local M = {}
 
 M.current_direction = nil
 M.current_location = nil

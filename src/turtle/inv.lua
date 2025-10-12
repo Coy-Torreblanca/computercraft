@@ -151,6 +151,7 @@ function M.ensure_attached(peripheral_name, side)
 end
 
 M.local_valid_fuel_items = {
+    'minecraft:lava_bucket',
     'minecraft:coal',
     'minecraft:charcoal',
     'minecraft:coal_block',

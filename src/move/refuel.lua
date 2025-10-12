@@ -2,7 +2,7 @@ local inv = require('/repo/src/turtle/inv')
 local turtle_nav = require('/repo/src/move/turtle_nav')
 local chest = require('/repo/src/chest/chest')
 
-M = {}
+local M = {}
 
 function M.refuel_at_station(refuel_station_coordinates, target_fuel_level, force_move)
     -- Refuel turtle at a designated refuel station, ensuring round-trip capability.
