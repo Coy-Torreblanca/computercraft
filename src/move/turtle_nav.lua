@@ -414,8 +414,9 @@ function M.turn_right()
 end
 
 function M.turn_direction(direction)
-    -- Turn the turtle to face a specific direction.
+    -- Turn the turtle to face a specific direction using minimum turns.
     --
+    -- Calculates whether turning left or right is shorter and uses that path.
     -- Accepts both cardinal (north, south, east, west) and coordinate-based
     -- (towards_x, away_x, towards_z, away_z) direction names.
     --
@@ -430,10 +431,33 @@ function M.turn_direction(direction)
     assert(VALID_DIRECTIONS[direction], "Invalid direction: " .. tostring(direction) .. ". Must be north, south, east, west, towards_x, away_x, towards_z, or away_z")
     
     local canonical_direction = normalize_direction(direction)
+    local current_direction = M.find_facing()
     
-    while M.find_facing() ~= canonical_direction do
-        if not M.turn_right() then
-            return false
+    if current_direction == canonical_direction then
+        return true
+    end
+    
+    -- Map directions to numbers: north=0, east=1, south=2, west=3
+    local direction_to_num = {north = 0, east = 1, south = 2, west = 3}
+    local current_num = direction_to_num[current_direction]
+    local target_num = direction_to_num[canonical_direction]
+    
+    -- Calculate turns needed for each direction
+    local right_turns = (target_num - current_num) % 4
+    local left_turns = (current_num - target_num) % 4
+    
+    -- Use whichever requires fewer turns
+    if right_turns <= left_turns then
+        for i = 1, right_turns do
+            if not M.turn_right() then
+                return false
+            end
+        end
+    else
+        for i = 1, left_turns do
+            if not M.turn_left() then
+                return false
+            end
         end
     end
 
