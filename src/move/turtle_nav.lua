@@ -96,7 +96,7 @@ function M.find_facing()
     -- Raises:
     --     error: If unable to move forward in any direction or unable to move back
 
-    inv.refuel()
+    inv.refuel(false)
 
     if turtle.getFuelLevel() == 0 then
         error("[FIND_FACING] No fuel")
@@ -185,7 +185,7 @@ function M.move_forward(force)
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
 
-    inv.refuel()
+    inv.refuel(false)
 
     if turtle.getFuelLevel() == 0 then
         error("[MOVE_FORWARD] No fuel")
@@ -234,7 +234,7 @@ function M.move_back(force)
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
 
-    inv.refuel()
+    inv.refuel(false)
 
     if turtle.getFuelLevel() == 0 then
         error("[MOVE_BACK] No fuel")
@@ -288,7 +288,7 @@ function M.move_up(force)
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
 
-    inv.refuel()
+    inv.refuel(false)
 
     if turtle.getFuelLevel() == 0 then
         error("[MOVE_UP] No fuel")
@@ -329,7 +329,7 @@ function M.move_down(force)
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
 
-    inv.refuel()
+    inv.refuel(false)
 
     if turtle.getFuelLevel() == 0 then
         error("[MOVE_DOWN] No fuel")
@@ -526,6 +526,12 @@ function M.goto_location(x, y, z, force)
         return false, nil
     end
     
+    -- Check if already at target before entering loop
+    local initial_delta = get_delta()
+    if initial_delta.x == 0 and initial_delta.y == 0 and initial_delta.z == 0 then
+        return true, M.current_location
+    end
+    
     -- Navigate to target
     local max_iterations = 10000  -- Safety limit to prevent infinite loops
     local iterations = 0
@@ -560,9 +566,11 @@ function M.goto_location(x, y, z, force)
         
         -- If we couldn't move on any axis, we're blocked
         if not moved then
-            print("[GOTO_LOCATION] Blocked on all axes. Current: (" .. 
-                  M.current_location.x .. "," .. M.current_location.y .. "," .. M.current_location.z .. 
-                  ") Target: (" .. target.x .. "," .. target.y .. "," .. target.z .. ")")
+            local current_delta = get_delta()
+            print("[GOTO_LOCATION] Blocked on all axes.")
+            print("  Current: (" .. M.current_location.x .. "," .. M.current_location.y .. "," .. M.current_location.z .. ")")
+            print("  Target:  (" .. target.x .. "," .. target.y .. "," .. target.z .. ")")
+            print("  Delta:   (" .. current_delta.x .. "," .. current_delta.y .. "," .. current_delta.z .. ")")
             return false, M.current_location
         end
     end

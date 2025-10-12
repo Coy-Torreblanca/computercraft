@@ -50,7 +50,7 @@ function M.turn_to_modem()
     return true
 end
 
-local function get_chest_peripheral(peripheral_name)
+function M.get_chest_peripheral(peripheral_name)
     -- Get a chest peripheral by name or auto-detect.
     --
     -- If peripheral_name is nil, automatically finds the first available chest
@@ -93,7 +93,7 @@ local function get_chest_peripheral(peripheral_name)
     return chest, nil
 end
 
-local function get_turtle_name()
+function M.get_turtle_name()
     local modem = peripheral.find("modem")
     if not modem then
         return nil, "No modem found"
@@ -135,14 +135,14 @@ function M.get_item(item_name, count, peripheral_name)
     assert(type(count) == "number" and count > 0, "count must be a positive number")
     
     -- Get the chest peripheral
-    local chest_inv, err = get_chest_peripheral(peripheral_name)
+    local chest_inv, err = M.get_chest_peripheral(peripheral_name)
     if not chest_inv then
         print("[GET_ITEM] " .. err)
         return false, 0
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = get_turtle_name()
+    local turtle_name = M.get_turtle_name()
     
     local items_retrieved = 0
     
@@ -225,14 +225,14 @@ function M.deposit_item(item_name, count, peripheral_name)
     end
     
     -- Get the chest peripheral
-    local chest_inv, err = get_chest_peripheral(peripheral_name)
+    local chest_inv, err = M.get_chest_peripheral(peripheral_name)
     if not chest_inv then
         print("[DEPOSIT_ITEM] " .. err)
         return false, 0
     end
     
     -- Get turtle's inventory name for peripheral operations
-    local turtle_name = get_turtle_name()
+    local turtle_name = M.get_turtle_name()
     
     local items_deposited = 0
     
@@ -294,13 +294,13 @@ function M.deposit_all(peripheral_name)
     --     Requires turtle and chest to be on same wired modem network.
     
     -- Get the chest peripheral
-    local chest_inv, err = get_chest_peripheral(peripheral_name)
+    local chest_inv, err = M.get_chest_peripheral(peripheral_name)
     if not chest_inv then
         print("[DEPOSIT_ALL] " .. err)
         return 0
     end
     
-    local turtle_name = get_turtle_name()
+    local turtle_name = M.get_turtle_name()
     local slots_deposited = 0
     
     for slot = 1, 16 do

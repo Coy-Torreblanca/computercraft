@@ -42,48 +42,87 @@ function M.rectangle(corner1, corner2, func, force)
     assert(corner2 and corner2.x and corner2.y and corner2.z, "corner2 must have x, y, z coordinates")
     assert(type(func) == "function", "func must be a function")
     
-    -- Normalize coordinates to ensure min/max are correct
-    local min_x = math.min(corner1.x, corner2.x)
-    local max_x = math.max(corner1.x, corner2.x)
-    local min_y = math.min(corner1.y, corner2.y)
-    local max_y = math.max(corner1.y, corner2.y)
-    local min_z = math.min(corner1.z, corner2.z)
-    local max_z = math.max(corner1.z, corner2.z)
+    -- Use corner1 as starting point, corner2 as ending point
+    local start_x = corner1.x
+    local end_x = corner2.x
+    local start_y = corner1.y
+    local end_y = corner2.y
+    local start_z = corner1.z
+    local end_z = corner2.z
     
-    local total_positions = (max_x - min_x + 1) * (max_y - min_y + 1) * (max_z - min_z + 1)
+    -- Determine step direction based on which corner is which
+    local x_step = (end_x >= start_x) and 1 or -1
+    local y_step = (end_y >= start_y) and 1 or -1
+    local z_step = (end_z >= start_z) and 1 or -1
+    
+    local total_positions = (math.abs(end_x - start_x) + 1) * (math.abs(end_y - start_y) + 1) * (math.abs(end_z - start_z) + 1)
     local positions_visited = 0
     
     print("[RECTANGLE] Starting sweep of " .. total_positions .. " positions")
-    print("[RECTANGLE] From (" .. min_x .. "," .. min_y .. "," .. min_z .. ")")
-    print("[RECTANGLE]   to (" .. max_x .. "," .. max_y .. "," .. max_z .. ")")
+    print("[RECTANGLE] From (" .. start_x .. "," .. start_y .. "," .. start_z .. ")")
+    print("[RECTANGLE]   to (" .. end_x .. "," .. end_y .. "," .. end_z .. ")")
+    
+    -- Navigate to starting corner once
+    local success, location = turtle_nav.goto_location(start_x, start_y, start_z, force)
+    if not success then
+        print("[RECTANGLE] Failed to reach starting position")
+        return false, 0, total_positions
+    end
     
     -- Iterate through each Y layer
-    for y = min_y, max_y do
+    local y_count = 0
+    for y = start_y, end_y, y_step do
         print("[RECTANGLE] Layer Y=" .. y)
         
+        -- Move to next Y layer if not first
+        if y_count > 0 then
+            local move_func = (y_step > 0) and turtle_nav.move_up or turtle_nav.move_down
+            success, location = move_func(force)
+            if not success then
+                print("[RECTANGLE] Failed to move to Y layer " .. y)
+                return false, positions_visited, total_positions
+            end
+        end
+        y_count = y_count + 1
+        
         -- Iterate through each Z row
-        for z = min_z, max_z do
-            local z_index = z - min_z
-            local reverse = (z_index % 2) == 1  -- Alternate direction each row
+        local z_count = 0
+        for z = start_z, end_z, z_step do
+            local reverse = (z_count % 2) == 1  -- Alternate direction each row
             
             -- Determine X iteration direction for serpentine pattern
-            local x_start, x_end, x_step
+            local x_iter_start, x_iter_end, x_iter_step
             if reverse then
-                x_start, x_end, x_step = max_x, min_x, -1
+                x_iter_start, x_iter_end, x_iter_step = end_x, start_x, -x_step
             else
-                x_start, x_end, x_step = min_x, max_x, 1
+                x_iter_start, x_iter_end, x_iter_step = start_x, end_x, x_step
             end
             
-            -- Iterate through each X position in this row
-            for x = x_start, x_end, x_step do
-                -- Move to position
-                local success, location = turtle_nav.goto_location(x, y, z, force)
-                
+            -- Move to next Z row if not first
+            if z_count > 0 then
+                local z_direction = (z_step > 0) and "towards_z" or "away_z"
+                success, location = turtle_nav.move_direction(z_direction, force)
                 if not success then
-                    print("[RECTANGLE] Failed to reach position (" .. x .. "," .. y .. "," .. z .. ")")
-                    print("[RECTANGLE] Visited " .. positions_visited .. "/" .. total_positions .. " positions")
+                    print("[RECTANGLE] Failed to move to Z row " .. z)
                     return false, positions_visited, total_positions
                 end
+            end
+            z_count = z_count + 1
+            
+            -- Traverse X row (forward or backward depending on serpentine pattern)
+            local x_count = 0
+            for x = x_iter_start, x_iter_end, x_iter_step do
+                -- Move along X if not first position in row
+                if x_count > 0 then
+                    local x_direction = reverse and (-x_step > 0 and "towards_x" or "away_x") or (x_step > 0 and "towards_x" or "away_x")
+                    success, location = turtle_nav.move_direction(x_direction, force)
+                    if not success then
+                        print("[RECTANGLE] Failed to reach position (" .. x .. "," .. y .. "," .. z .. ")")
+                        print("[RECTANGLE] Visited " .. positions_visited .. "/" .. total_positions .. " positions")
+                        return false, positions_visited, total_positions
+                    end
+                end
+                x_count = x_count + 1
                 
                 -- Execute user function at this position
                 local continue = func(x, y, z, turtle_nav)
