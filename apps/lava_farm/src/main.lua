@@ -27,8 +27,8 @@ Configuration:
 
 local inv = require('/repo/src/turtle/inv')
 local chest = require('/repo/src/chest/chest')
-local move_shapes = require('/repo/src/move/shapes')
-local turtle_nav = require('/repo/src/move/turtle_nav')
+local move_shapes = require('/repo/src/turtle/move/shapes')
+local turtle_nav = require('/repo/src/turtle/move/turtle_nav')
 
 
 -- Configuration for lava farm operation

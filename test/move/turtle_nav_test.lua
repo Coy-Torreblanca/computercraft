@@ -5,7 +5,7 @@ Run this on a turtle with GPS access to test navigation functionality.
 Requires at least 3x3x3 clear space around the turtle.
 ]]
 
-local turtle_nav = require('/repo/src/move/turtle_nav')
+local turtle_nav = require('/repo/src/turtle/move/turtle_nav')
 
 local TEST_RESULTS = {
     passed = 0,

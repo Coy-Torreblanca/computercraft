@@ -5,8 +5,8 @@ Run this on a turtle with GPS access to test shape movement functionality.
 Requires sufficient clear space for the test patterns.
 ]]
 
-local shapes = require('/repo/src/move/shapes')
-local turtle_nav = require('/repo/src/move/turtle_nav')
+local shapes = require('/repo/src/turtle/move/shapes')
+local turtle_nav = require('/repo/src/turtle/move/turtle_nav')
 
 print("===========================================")
 print("  SHAPES MODULE TESTS")

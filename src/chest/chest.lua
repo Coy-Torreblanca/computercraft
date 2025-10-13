@@ -12,7 +12,7 @@ References:
 ]]
 
 local inv = require('/repo/src/turtle/inv')
-local turtle_nav = require('/repo/src/move/turtle_nav')
+local turtle_nav = require('/repo/src/turtle/move/turtle_nav')
 
 local M = {}
 
