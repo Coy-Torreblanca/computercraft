@@ -63,9 +63,9 @@ function M.rectangle(corner1, corner2, func, force)
     print("[RECTANGLE]   to (" .. end_x .. "," .. end_y .. "," .. end_z .. ")")
     
     -- Navigate to starting corner once
-    local success, location = turtle_nav.goto_location(start_x, start_y, start_z, force)
+    local success, location, message = turtle_nav.goto_location(start_x, start_y, start_z, force)
     if not success then
-        print("[RECTANGLE] Failed to reach starting position")
+        print("[RECTANGLE] Failed to reach starting position: " .. (message or "unknown error"))
         return false, 0, total_positions
     end
     
@@ -77,9 +77,9 @@ function M.rectangle(corner1, corner2, func, force)
         -- Move to next Y layer if not first
         if y_count > 0 then
             local move_func = (y_step > 0) and turtle_nav.move_up or turtle_nav.move_down
-            success, location = move_func(force)
+            success, location, message = move_func(force)
             if not success then
-                print("[RECTANGLE] Failed to move to Y layer " .. y)
+                print("[RECTANGLE] Failed to move to Y layer " .. y .. ": " .. (message or "unknown error"))
                 return false, positions_visited, total_positions
             end
         end
@@ -101,9 +101,9 @@ function M.rectangle(corner1, corner2, func, force)
             -- Move to next Z row if not first
             if z_count > 0 then
                 local z_direction = (z_step > 0) and "towards_z" or "away_z"
-                success, location = turtle_nav.move_direction(z_direction, force)
+                success, location, message = turtle_nav.move_direction(z_direction, force)
                 if not success then
-                    print("[RECTANGLE] Failed to move to Z row " .. z)
+                    print("[RECTANGLE] Failed to move to Z row " .. z .. ": " .. (message or "unknown error"))
                     return false, positions_visited, total_positions
                 end
             end
@@ -115,9 +115,9 @@ function M.rectangle(corner1, corner2, func, force)
                 -- Move along X if not first position in row
                 if x_count > 0 then
                     local x_direction = reverse and (-x_step > 0 and "towards_x" or "away_x") or (x_step > 0 and "towards_x" or "away_x")
-                    success, location = turtle_nav.move_direction(x_direction, force)
+                    success, location, message = turtle_nav.move_direction(x_direction, force)
                     if not success then
-                        print("[RECTANGLE] Failed to reach position (" .. x .. "," .. y .. "," .. z .. ")")
+                        print("[RECTANGLE] Failed to reach position (" .. x .. "," .. y .. "," .. z .. "): " .. (message or "unknown error"))
                         print("[RECTANGLE] Visited " .. positions_visited .. "/" .. total_positions .. " positions")
                         return false, positions_visited, total_positions
                     end
@@ -189,10 +189,10 @@ function M.hollow_rectangle(corner1, corner2, func, force)
         for z = min_z, max_z do
             for x = min_x, max_x do
                 if is_edge(x, y, z) then
-                    local success, location = turtle_nav.goto_location(x, y, z, force)
+                    local success, location, message = turtle_nav.goto_location(x, y, z, force)
                     
                     if not success then
-                        print("[HOLLOW_RECTANGLE] Failed to reach (" .. x .. "," .. y .. "," .. z .. ")")
+                        print("[HOLLOW_RECTANGLE] Failed to reach (" .. x .. "," .. y .. "," .. z .. "): " .. (message or "unknown error"))
                         return false, positions_visited, nil
                     end
                     

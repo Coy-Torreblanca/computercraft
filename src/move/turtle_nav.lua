@@ -522,7 +522,8 @@ function M.goto_location(x, y, z, force)
     --
     -- Returns:
     --     success: Boolean, true if reached target location
-    --     location: Current location table {x, y, z}
+    --     location: Table with {x, y, z} if succeeded, nil if failed
+    --     message: String error message if failed, nil if succeeded
     M.get_current_location()
     local target = {x = x, y = y, z = z}
     
@@ -560,13 +561,13 @@ function M.goto_location(x, y, z, force)
         end
         
         -- No movement needed on this axis
-        return false, nil
+        return false, nil, nil
     end
     
     -- Check if already at target before entering loop
     local initial_delta = get_delta()
     if initial_delta.x == 0 and initial_delta.y == 0 and initial_delta.z == 0 then
-        return true, M.current_location
+        return true, M.current_location, nil
     end
     
     -- Navigate to target
@@ -574,13 +575,15 @@ function M.goto_location(x, y, z, force)
     local iterations = 0
     
     local axes = {"x", "y", "z"}
+    local last_error_message = nil
+    
     while iterations < max_iterations do
         iterations = iterations + 1
         local delta = get_delta()
         
         -- Check if we've reached target
         if delta.x == 0 and delta.y == 0 and delta.z == 0 then
-            return true, M.current_location
+            return true, M.current_location, nil
         end
         
         -- Try each axis that still needs movement
@@ -593,10 +596,15 @@ function M.goto_location(x, y, z, force)
                                   (axis == "z" and current_delta.z ~= 0)
             
             if needs_movement then
-                local success, location = try_move_axis(axis)
+                local success, location, message = try_move_axis(axis)
                 if success then
                     moved = true
                     break  -- Successfully moved, start next iteration
+                else
+                    -- Store the last error message
+                    if message then
+                        last_error_message = message
+                    end
                 end
             end
         end
@@ -604,11 +612,14 @@ function M.goto_location(x, y, z, force)
         -- If we couldn't move on any axis, we're blocked
         if not moved then
             local current_delta = get_delta()
-            print("[GOTO_LOCATION] Blocked on all axes.")
+            local error_msg = "Blocked on all axes (delta: " .. current_delta.x .. "," .. current_delta.y .. "," .. current_delta.z .. ")"
+            if last_error_message then
+                error_msg = error_msg .. ": " .. last_error_message
+            end
+            print("[GOTO_LOCATION] " .. error_msg)
             print("  Current: (" .. M.current_location.x .. "," .. M.current_location.y .. "," .. M.current_location.z .. ")")
             print("  Target:  (" .. target.x .. "," .. target.y .. "," .. target.z .. ")")
-            print("  Delta:   (" .. current_delta.x .. "," .. current_delta.y .. "," .. current_delta.z .. ")")
-            return false, M.current_location
+            return false, M.current_location, last_error_message
         end
     end
     
