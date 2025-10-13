@@ -184,6 +184,7 @@ function M.move_forward(force)
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+    --     message: String error message if failed, nil if succeeded
 
     inv.refuel(false)
 
@@ -198,16 +199,18 @@ function M.move_forward(force)
     end
 
     -- Try to move, or force dig if enabled
-    if not turtle.forward() then
+    local result, message = turtle.forward()
+    if not result then
         if force then
-            turtle.dig()
+            turtle.dig() -- TODO account for gravel.
             sleep(0.5)  -- Wait for block to break
             
-            if not turtle.forward() then
-                return false, nil  -- Still blocked (bedrock, entity, etc)
+            local result, message = turtle.forward()
+            if not result then
+                return false, nil, message -- Still blocked (bedrock, entity, etc)
             end
         else
-            return false, nil
+            return false, nil, message
         end
     end
 
@@ -221,7 +224,7 @@ function M.move_forward(force)
         M.current_location.z = M.current_location.z - 1
     end
 
-    return true, M.current_location
+    return true, M.current_location, nil
 end
 
 function M.move_back(force)
@@ -233,6 +236,7 @@ function M.move_back(force)
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+    --     message: String error message if failed, nil if succeeded
 
     inv.refuel(false)
 
@@ -247,7 +251,8 @@ function M.move_back(force)
     end
 
     -- Try to move back, or force dig behind if enabled
-    if not turtle.back() then
+    local result, message = turtle.back()
+    if not result then
         if force then
             -- Turn around, dig, move, turn back
             M.turn_right()
@@ -257,11 +262,12 @@ function M.move_back(force)
             M.turn_right()
             M.turn_right()
             
-            if not turtle.back() then
-                return false, nil
+            result, message = turtle.back()
+            if not result then
+                return false, nil, message
             end
         else
-            return false, nil
+            return false, nil, message
         end
     end
 
@@ -275,7 +281,7 @@ function M.move_back(force)
         M.current_location.z = M.current_location.z + 1
     end
 
-    return true, M.current_location
+    return true, M.current_location, nil
 end
 
 function M.move_up(force)
@@ -287,6 +293,7 @@ function M.move_up(force)
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+    --     message: String error message if failed, nil if succeeded
 
     inv.refuel(false)
 
@@ -297,16 +304,18 @@ function M.move_up(force)
     M.get_current_location()
 
     -- Try to move up, or force dig if enabled
-    if not turtle.up() then
+    local result, message = turtle.up()
+    if not result then
         if force then
             turtle.digUp()
             sleep(0.5)  -- Wait for block to break
             
-            if not turtle.up() then
-                return false, nil  -- Still blocked
+            result, message = turtle.up()
+            if not result then
+                return false, nil, message  -- Still blocked
             end
         else
-            return false, nil
+            return false, nil, message
         end
     end
 
@@ -316,7 +325,7 @@ function M.move_up(force)
 
     M.current_location.y = M.current_location.y + 1
 
-    return true, M.current_location
+    return true, M.current_location, nil
 end
 
 function M.move_down(force)
@@ -328,6 +337,7 @@ function M.move_down(force)
     -- Returns:
     --     success: Boolean, true if move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+    --     message: String error message if failed, nil if succeeded
 
     inv.refuel(false)
 
@@ -338,16 +348,18 @@ function M.move_down(force)
     M.get_current_location()
 
     -- Try to move down, or force dig if enabled
-    if not turtle.down() then
+    local result, message = turtle.down()
+    if not result then
         if force then
             turtle.digDown()
             sleep(0.5)  -- Wait for block to break
             
-            if not turtle.down() then
-                return false, nil  -- Still blocked
+            result, message = turtle.down()
+            if not result then
+                return false, nil, message  -- Still blocked
             end
         else
-            return false, nil
+            return false, nil, message
         end
     end
 
@@ -356,7 +368,7 @@ function M.move_down(force)
     end
 
     M.current_location.y = M.current_location.y - 1
-    return true, M.current_location
+    return true, M.current_location, nil
 end
 
 function M.turn_left()
@@ -477,21 +489,22 @@ function M.move_direction(direction, force)
     -- Returns:
     --     success: Boolean, true if both turn and move succeeded
     --     location: Table with {x, y, z} if succeeded, nil if failed
+    --     message: String error message if failed, nil if succeeded
     --
     -- Raises:
     --     error: If direction is invalid
     assert(VALID_DIRECTIONS[direction], "Invalid direction: " .. tostring(direction) .. ". Must be north, south, east, west, towards_x, away_x, towards_z, or away_z")
 
     if not M.turn_direction(direction) then
-        return false, nil
+        return false, nil, "Failed to turn to direction"
     end
 
-    local success, location = M.move_forward(force)
+    local success, location, message = M.move_forward(force)
     if not success then
-        return false, nil
+        return false, nil, message
     end
 
-    return true, location
+    return true, location, nil
 
 end
 
