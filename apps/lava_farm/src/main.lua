@@ -103,6 +103,7 @@ local function empty_cauldron(x, y, z, nav)
     -- If out of iron buckets, deposit lava and resupply
     if iron_bucket_slot == nil then
         local start_position = turtle_nav.get_current_location()
+        local starting_direction = turtle_nav.find_facing()
         deposit_lava_buckets()
         get_iron_buckets()
         
@@ -110,6 +111,8 @@ local function empty_cauldron(x, y, z, nav)
         if not success then
             error("Failed to return to position after resupplying buckets")
         end
+
+        turtle_nav.turn_direction(starting_direction)
         
         iron_bucket_slot = inv.find_item("minecraft:bucket")
     end
