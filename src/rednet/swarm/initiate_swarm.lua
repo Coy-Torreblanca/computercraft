@@ -31,7 +31,12 @@ function M.register_host(swarm_count, protocol, lookup_timeout_sec, registration
     lookup_timeout_sec = lookup_timeout_sec or 300
     registration_timeout_sec = registration_timeout_sec or 600
 
-    inv.ensure_attached('computercraft:wireless_modem_advanced', 'left')
+    if not inv.ensure_attached('computercraft:wireless_modem_advanced', 'left') then
+        if not inv.ensure_attached('computercraft:wireless_modem_normal', 'left') then
+            error("Failed to attach modem")
+        end
+    end
+
     rednet.open('left')
     rednet.host(protocol, 'host')
     rednet.host(protocol .. '_host_ack', 'host')
@@ -112,7 +117,11 @@ function M.register_drone(protocol, lookup_timeout_sec)
     
     print("[REGISTER_DRONE] Starting registration for protocol: " .. protocol)
     
-    inv.ensure_attached('computercraft:wireless_modem_advanced', 'left')
+    if not inv.ensure_attached('computercraft:wireless_modem_advanced', 'left') then
+        if not inv.ensure_attached('computercraft:wireless_modem_normal', 'left') then
+            error("Failed to attach modem")
+        end
+    end
     rednet.open('left')
 
     local id = os.computerID()
