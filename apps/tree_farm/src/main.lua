@@ -14,26 +14,43 @@ local config = {
     max_x = 100,
     fuel_threshold = 20000,
     modem_direction = "away_x",
-    routine_protocol = "tree_farm_coy1"
+    routine_protocol = "tree_farm_coy1",
+    swarm_count = 22,
 }
 
 local refuel = require('/repo/src/turtle/move/refuel')
 local turtle_nav = require('/repo/src/turtle/move/turtle_nav')
 local initiate_swarm = require('/repo/src/rednet/swarm/initiate_swarm')
+local messages = require('/repo/src/rednet/utils/messages')
 
-local function node_start_routine()
+M = {}
+
+function M.node_refuel()
+    while true do
+        local success, msg = refuel.refuel_at_station(turtle_nav.get_current_location(), config.fuel_threshold, config.required_fuel_level)
+        if success then
+            break
+        end
+    end
+end
+
+function M.node_init()
     -- assume at starting position.
 
-    local success, msg = refuel.refuel_at_station(turtle_nav.get_current_location(), config.fuel_threshold, config.required_fuel_level)
+    M.node_refuel()
 
-    if not success then
-        error("Failed to refuel: " .. msg)
-    end
-
-    success, msg = initiate_swarm.register_drone(config.routine_protocol)
+    local success, msg = initiate_swarm.register_drone(config.routine_protocol)
 
     if not success then
         error("Failed to register drone: " .. msg)
     end
 
+end
+
+function M.host_init()
+    local success, msg = initiate_swarm.register_host(config.swarm_count, config.routine_protocol)
+
+    if not success then
+        error("Failed to register host: " .. msg)
+    end
 end
