@@ -1,9 +1,9 @@
 local M = {}
 
-inv = require('/repo/src/turtle/inv')
-messages = require('/repo/src/rednet/utils/messages')
+local inv = require('/repo/src/turtle/inv')
+local messages = require('/repo/src/rednet/utils/messages')
 
-function _validate_swarm(swarm_inv, swarm_validation_table)
+function M._validate_swarm(swarm_inv, swarm_validation_table)
 
     for _, computer_id in pairs(swarm_inv) do
         if not swarm_validation_table[computer_id] then
@@ -14,14 +14,22 @@ function _validate_swarm(swarm_inv, swarm_validation_table)
     return true
 end
 
-function M.register_host(swarm_count, protocol)
+function M.register_host(swarm_count, protocol, lookup_timeout_sec, registration_timeout_sec)
     -- Begin hosting protocol, register the swarm, and broadcast host register message.
     -- Args:
     --- swarm_count - Number of other computers in the swarm.
     ---- Does not include host.
     ---- Registration will not complete until all nodes ack.
     --- protocol - String of protocol under which swarm will communicate.
+    --- lookup_timeout_sec - (optional) Timeout in seconds to find all drones. Default: 300 (5 minutes).
+    --- registration_timeout_sec - (optional) Timeout in seconds for all nodes to register. Default: 600 (10 minutes).
+    -- Returns:
+    --- success - Boolean indicating if registration was successful.
+    --- message - String describing the result.
+    --- swarm_inv - Table of swarm computer IDs (only on success).
     
+    lookup_timeout_sec = lookup_timeout_sec or 300
+    registration_timeout_sec = registration_timeout_sec or 600
 
     inv.ensure_attached('computercraft:wireless_modem_advanced', 'left')
     rednet.open('left')
@@ -32,14 +40,14 @@ function M.register_host(swarm_count, protocol)
     
     local swarm_inv
     local start_time = os.epoch("utc")
-    local lookup_timeout_ms = 300000 -- 5 minutes to find all drones
+    local lookup_timeout_ms = lookup_timeout_sec * 1000
 
     while true do
         local elapsed_time = (os.epoch("utc") - start_time) / 1000
         
         if elapsed_time >= lookup_timeout_ms / 1000 then
             print("[REGISTER_HOST] ERROR - Lookup timeout after " .. string.format("%.1f", elapsed_time) .. "s")
-            error("Failed to find " .. swarm_count .. " nodes within timeout period")
+            return false, "Failed to find " .. swarm_count .. " nodes within timeout period", nil
         end
         
         print("[REGISTER_HOST] Looking up swarm inventory...")
@@ -59,7 +67,7 @@ function M.register_host(swarm_count, protocol)
     swarm_validation[id] = true
     
     start_time = os.epoch("utc") -- Reset timer for registration phase
-    local total_timeout_ms = 600000 -- 10 minutes total timeout for all registrations
+    local total_timeout_ms = registration_timeout_sec * 1000
     local attempt_count = 0
 
     while true do
@@ -68,10 +76,11 @@ function M.register_host(swarm_count, protocol)
         
         if elapsed_time >= total_timeout_ms / 1000 then
             print("[REGISTER_HOST] ERROR - Registration timeout after " .. attempt_count .. " attempts and " .. string.format("%.1f", elapsed_time) .. "s")
-            error("Swarm registration timeout: Not all nodes registered within timeout period")
+            return false, "Swarm registration timeout: Not all nodes registered within timeout period", nil
         end
         
         print("[REGISTER_HOST] Attempt #" .. attempt_count .. " - Waiting for registration (elapsed: " .. string.format("%.1f", elapsed_time) .. "s)")
+        local message, sender_id = nil, nil
         message, sender_id = messages.receive_ack(protocol .. '_host_ack', 30) -- 30s per attempt
 
         if message == 'host register' and not swarm_validation[sender_id] then
@@ -79,35 +88,41 @@ function M.register_host(swarm_count, protocol)
             print("[REGISTER_HOST] Registered computer " .. sender_id .. " - Total registered: " .. tostring(#swarm_validation) .. "/" .. swarm_count)
         end
 
-        if _validate_swarm(swarm_inv, swarm_validation) then
+        if M._validate_swarm(swarm_inv, swarm_validation) then
             print("[REGISTER_HOST] SUCCESS - All " .. swarm_count .. " nodes registered!")
             break
         end
 
     end
 
-    return swarm_inv
+    return true, "Successfully registered all " .. swarm_count .. " nodes", swarm_inv
 
 end
 
-function M.register_drone(protocol)
+function M.register_drone(protocol, lookup_timeout_sec)
     -- Register as a drone in the swarm by looking up and connecting to host.
     -- Args:
     --- protocol - String of protocol under which swarm communicates.
+    --- lookup_timeout_sec - (optional) Timeout in seconds to find host. Default: 300 (5 minutes).
+    -- Returns:
+    --- success - Boolean indicating if registration was successful.
+    --- message - String describing the result.
+    
+    lookup_timeout_sec = lookup_timeout_sec or 300
     
     print("[REGISTER_DRONE] Starting registration for protocol: " .. protocol)
     
     inv.ensure_attached('computercraft:wireless_modem_advanced', 'left')
     rednet.open('left')
 
-    id = os.computerID()
+    local id = os.computerID()
     
     -- Announce this drone is available
     rednet.host(protocol, 'drone-' .. id)
     rednet.host(protocol .. '_host_ack', 'drone-' .. id)
     
     local start_time = os.epoch("utc")
-    local lookup_timeout_ms = 300000 -- 5 minutes to find host
+    local lookup_timeout_ms = lookup_timeout_sec * 1000
     local host_id = nil
     
     -- Wait for host to be available
@@ -117,7 +132,7 @@ function M.register_drone(protocol)
         
         if elapsed_time >= lookup_timeout_ms / 1000 then
             print("[REGISTER_DRONE] ERROR - Host lookup timeout after " .. string.format("%.1f", elapsed_time) .. "s")
-            error("Failed to find host within timeout period")
+            return false, "Failed to find host within timeout period"
         end
         
         host_id = rednet.lookup(protocol, 'host')
@@ -140,9 +155,10 @@ function M.register_drone(protocol)
     
     if sender_id == host_id then
         print("[REGISTER_DRONE] SUCCESS - Registered with host " .. host_id)
+        return true, "Successfully registered with host " .. host_id
     else
         print("[REGISTER_DRONE] ERROR - Unexpected response from computer " .. sender_id)
-        error("Registration failed: response from wrong computer")
+        return false, "Registration failed: response from wrong computer (expected " .. host_id .. ", got " .. tostring(sender_id) .. ")"
     end
 end
 
