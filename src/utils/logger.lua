@@ -8,23 +8,19 @@ Features:
   - Multiple log levels: DEBUG, INFO, WARN, ERROR
   - Automatic timestamps
   - Module-specific loggers with prefixes
-  - Configurable global AND per-instance log levels
+  - Global log level configuration
   - Clean, consistent output format
 
 Example:
     local logger = require('/repo/src/utils/logger')
     
-    -- Default logger (uses global level)
+    -- Create logger
     local log = logger.new('MyModule')
     log.info("Starting operation")
     
-    -- Logger with specific level
-    local debug_log = logger.new('Debugger', 'DEBUG')
-    debug_log.debug("This will show even if global level is INFO")
-    
-    -- Change logger level at runtime
-    log.set_level('ERROR')  -- Now only shows errors
-    log.set_level(nil)      -- Back to using global level
+    -- Change global level to show debug logs
+    logger.set_level('DEBUG')
+    log.debug("This will now show")
 ]]
 
 local M = {}
@@ -68,33 +64,15 @@ end
 --- Create a new logger for a specific module
 -- Args:
 --   module_name - String name of the module (used as prefix in logs)
---   min_level - (optional) String: "DEBUG", "INFO", "WARN", or "ERROR". 
---               If provided, this logger will only log at this level or above.
---               If nil, uses global M.MIN_LEVEL.
--- Returns: Table with logging methods (debug, info, warn, error, set_level)
-function M.new(module_name, min_level)
+-- Returns: Table with logging methods (debug, info, warn, error)
+function M.new(module_name)
     local logger = {}
-    
-    -- Instance-specific minimum level (overrides global if set)
-    local instance_min_level = nil
-    if min_level then
-        if not LEVELS[min_level] then
-            error("Invalid log level: " .. tostring(min_level))
-        end
-        instance_min_level = LEVELS[min_level]
-    end
-    
-    --- Get effective minimum level (instance level or global)
-    -- Returns: Number representing minimum log level
-    local function get_min_level()
-        return instance_min_level or M.MIN_LEVEL
-    end
     
     --- Log a debug message
     -- Args:
     --   message - String message to log
     function logger.debug(message)
-        if LEVELS.DEBUG >= get_min_level() then
+        if LEVELS.DEBUG >= M.MIN_LEVEL then
             print(format_log("DEBUG", module_name, message))
         end
     end
@@ -103,7 +81,7 @@ function M.new(module_name, min_level)
     -- Args:
     --   message - String message to log
     function logger.info(message)
-        if LEVELS.INFO >= get_min_level() then
+        if LEVELS.INFO >= M.MIN_LEVEL then
             print(format_log("INFO", module_name, message))
         end
     end
@@ -112,7 +90,7 @@ function M.new(module_name, min_level)
     -- Args:
     --   message - String message to log
     function logger.warn(message)
-        if LEVELS.WARN >= get_min_level() then
+        if LEVELS.WARN >= M.MIN_LEVEL then
             print(format_log("WARN", module_name, message))
         end
     end
@@ -121,21 +99,8 @@ function M.new(module_name, min_level)
     -- Args:
     --   message - String message to log
     function logger.error(message)
-        if LEVELS.ERROR >= get_min_level() then
+        if LEVELS.ERROR >= M.MIN_LEVEL then
             print(format_log("ERROR", module_name, message))
-        end
-    end
-    
-    --- Set this logger's minimum level
-    -- Args:
-    --   level - String: "DEBUG", "INFO", "WARN", or "ERROR", or nil to use global
-    function logger.set_level(level)
-        if level == nil then
-            instance_min_level = nil
-        elseif LEVELS[level] then
-            instance_min_level = LEVELS[level]
-        else
-            error("Invalid log level: " .. tostring(level))
         end
     end
     

@@ -9,8 +9,11 @@ directions (towards_x, away_x, towards_z, away_z).
 ]]
 
 local inv = require('/repo/src/turtle/inv')
+local logger = require('/repo/src/utils/logger')
 
 local M = {}
+
+local log = logger.new("TurtleNav")
 
 M.current_direction = nil
 M.current_location = nil
@@ -526,6 +529,8 @@ function M.goto_location(x, y, z, force)
     --     message: String error message if failed, nil if succeeded
     M.get_current_location()
     local target = {x = x, y = y, z = z}
+    log.debug("Current location: " .. M.current_location.x .. ", " .. M.current_location.y .. ", " .. M.current_location.z)
+    log.debug("Target location: " .. target.x .. ", " .. target.y .. ", " .. target.z)
     
     local function get_delta()
         -- Calculate remaining distance on each axis

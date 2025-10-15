@@ -50,46 +50,7 @@ Levels from highest to lowest priority:
 
 ## Configuration
 
-### Per-Instance Log Level (Recommended)
-
-Set the log level when creating a logger for fine-grained control:
-
-```lua
-local logger = require('/repo/src/utils/logger')
-
--- Create logger with DEBUG level (shows everything)
-local debug_log = logger.new('Navigation', 'DEBUG')
-
--- Create logger with ERROR level (only critical errors)
-local error_log = logger.new('Network', 'ERROR')
-
--- Default logger (uses global level)
-local info_log = logger.new('MainApp')
-
-debug_log.debug("Detailed trace")  -- Shows
-error_log.debug("Network detail")  -- Hidden
-info_log.info("Application start") -- Shows (if global is INFO)
-```
-
-### Change Logger Level at Runtime
-
-```lua
-local log = logger.new('MyModule')
-
--- Initially uses global level
-log.info("Starting")
-
--- Set specific level for this logger
-log.set_level('ERROR')
-log.info("This won't show")   -- Hidden
-log.error("This will show")   -- Shows
-
--- Revert to using global level
-log.set_level(nil)
-log.info("Back to normal")  -- Shows if global is INFO
-```
-
-### Global Log Level (Affects All Loggers Without Instance Level)
+### Global Log Level
 
 ```lua
 local logger = require('/repo/src/utils/logger')
@@ -104,36 +65,7 @@ logger.set_level("DEBUG")
 logger.set_level("INFO")
 ```
 
-**Note:** Instance-level settings override global settings. This allows you to debug specific modules without flooding output from others.
-
-### Multiple Module Loggers with Different Levels
-
-```lua
-local logger = require('/repo/src/utils/logger')
-
--- Navigation needs detailed debugging
-local nav_log = logger.new('Navigation', 'DEBUG')
-
--- Refuel only needs important info
-local fuel_log = logger.new('Refuel', 'WARN')
-
--- ChestOps uses global level
-local chest_log = logger.new('ChestOps')
-
-nav_log.debug("Current position: (10, 64, 20)")  -- Shows
-nav_log.info("Moving to coordinates (15, 65, 25)")  -- Shows
-fuel_log.info("Refueling complete")  -- Hidden (WARN level)
-fuel_log.warn("Fuel level below threshold: " .. turtle.getFuelLevel())  -- Shows
-chest_log.info("Depositing items")  -- Shows if global is INFO
-```
-
-Output (assuming global is INFO):
-```
-[14:30:12] [DEBUG] [Navigation] Current position: (10, 64, 20)
-[14:30:12] [INFO] [Navigation] Moving to coordinates (15, 65, 25)
-[14:30:15] [WARN] [Refuel] Fuel level below threshold: 450
-[14:30:18] [INFO] [ChestOps] Depositing items
-```
+All loggers in your application will use the global level.
 
 ## Best Practices
 
@@ -173,9 +105,6 @@ local log = logger.new('ModuleName')
 function M.some_function()
     log.info("Function called")
 end
-
--- ✅ Also good: Set level during development
-local log = logger.new('ModuleName', 'DEBUG')  -- Temporary for debugging
 
 -- ❌ Bad: Creating logger in every function
 function M.some_function()
@@ -226,20 +155,16 @@ function M.register_host(swarm_count, protocol)
 end
 ```
 
-### Example 2: Different Levels for Different Modules
+### Example 2: Multiple Module Loggers
 
 ```lua
 -- main.lua
 local logger = require('/repo/src/utils/logger')
 
--- Core app logic only needs INFO+
-local app_log = logger.new('App', 'INFO')
-
--- Network operations need detailed debugging
-local net_log = logger.new('Network', 'DEBUG')
-
--- File operations only show errors
-local file_log = logger.new('FileOps', 'ERROR')
+-- Create loggers for different modules
+local app_log = logger.new('App')
+local net_log = logger.new('Network')
+local file_log = logger.new('FileOps')
 
 function main()
     app_log.info("Application starting")
@@ -248,8 +173,8 @@ function main()
     net_log.debug("Sending handshake packet")
     net_log.info("Connection established")
     
-    file_log.debug("Reading config file")  -- Won't show (ERROR only)
-    file_log.error("Failed to open config.txt")  -- Shows
+    file_log.debug("Reading config file")
+    file_log.error("Failed to open config.txt")
     
     app_log.info("Application ready")
 end
@@ -264,7 +189,7 @@ local log = logger.new('MiningOp')
 function mine_with_diagnostics(enable_debug)
     -- Enable debug logging if requested
     if enable_debug then
-        log.set_level('DEBUG')
+        logger.set_level('DEBUG')
         log.debug("Debug mode enabled")
     end
     
@@ -279,7 +204,9 @@ function mine_with_diagnostics(enable_debug)
     log.info("Mining complete")
     
     -- Restore normal logging
-    log.set_level(nil)
+    if enable_debug then
+        logger.set_level('INFO')
+    end
 end
 ```
 
@@ -320,12 +247,12 @@ end
 
 **Pros:**
 - ✅ Consistent, professional output
-- ✅ Easy filtering with log levels (global AND per-instance)
+- ✅ Easy filtering with global log level
 - ✅ Clear module identification
 - ✅ Timestamps for debugging timing issues
 - ✅ Zero configuration needed for basic use
 - ✅ Familiar API pattern
-- ✅ Runtime level changes for targeted debugging
+- ✅ Simple, predictable behavior
 - ✅ Lightweight with minimal performance overhead
 
 **Cons:**
@@ -333,36 +260,30 @@ end
 - ❌ No log rotation or file output
 - ❌ Timestamp precision limited to game time
 - ❌ No structured data (JSON) support
+- ❌ No per-module log level control
 
 ## Advanced Usage
-
-### Selective Debugging
-
-Debug only one problematic module while keeping others quiet:
-
-```lua
--- Set global level to INFO (minimal output)
-logger.set_level('INFO')
-
--- But enable DEBUG for the module you're troubleshooting
-local problem_log = logger.new('ProblematicModule', 'DEBUG')
-local normal_log = logger.new('NormalModule')  -- Uses INFO
-
--- Now only ProblematicModule will show debug messages
-problem_log.debug("Detailed diagnostic info")  -- Shows
-normal_log.debug("This won't clutter output")  -- Hidden
-```
 
 ### Conditional Logging Based on Config
 
 ```lua
+local logger = require('/repo/src/utils/logger')
 local config = {
-    debug_navigation = true,
-    debug_network = false
+    debug_mode = true
 }
 
-local nav_log = logger.new('Navigation', config.debug_navigation and 'DEBUG' or 'INFO')
-local net_log = logger.new('Network', config.debug_network and 'DEBUG' or 'INFO')
+-- Set log level based on configuration
+if config.debug_mode then
+    logger.set_level('DEBUG')
+else
+    logger.set_level('INFO')
+end
+
+local nav_log = logger.new('Navigation')
+local net_log = logger.new('Network')
+
+nav_log.debug("Detailed navigation info")  -- Shows if debug_mode is true
+net_log.info("Network connected")  -- Always shows
 ```
 
 ## Future Enhancements
