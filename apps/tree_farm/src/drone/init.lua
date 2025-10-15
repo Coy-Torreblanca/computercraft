@@ -33,9 +33,9 @@ function M.write_starting_position()
     log.debug("Position: (" .. current_pos.x .. ", " .. current_pos.y .. ", " .. current_pos.z .. ")")
     
     local f = io.open(filename, 'w')
-    f:write(current_pos.x)
-    f:write(current_pos.y)
-    f:write(current_pos.z)
+    f:write(current_pos.x .. '\n')
+    f:write(current_pos.y .. '\n')
+    f:write(current_pos.z .. '\n')
     f:close()
     
     log.info("Starting position saved")
