@@ -56,9 +56,9 @@ function M.read_starting_position()
         error("Could not read starting position file")
     end
     
-    local x = f:read('*number')
-    local y = f:read('*number')
-    local z = f:read('*number')
+    local x = tonumber(f:read())
+    local y = tonumber(f:read())
+    local z = tonumber(f:read())
     f:close()
     
     M.starting_position = {x = x, y = y, z = z}
